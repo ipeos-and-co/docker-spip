@@ -1,0 +1,18 @@
+# Specifies files to intentionally ignore when using Git
+# http://git-scm.com/docs/gitignore
+
+*.orig
+*.bak
+*.BAK
+*.tmp
+*.TMP
+*.swp
+*.old
+*.pyc
+*.DS_Store
+Thumbs.db
+
+# Other
+*.retry
+credentials
+docker-compose.yml
