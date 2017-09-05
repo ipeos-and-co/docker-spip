@@ -10,9 +10,9 @@ if [[ -z "$VERSION" ]]; then
 fi
 
 if [ $VERSION = "latest" ]; then
-  docker build -t $TARGET 3.1
+  sudo docker build -t $TARGET 3.1
   exit 1;
 fi
 
-docker build -t $TARGET $VERSION
+sudo docker build -t $TARGET $VERSION
 exit 1;

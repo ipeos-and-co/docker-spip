@@ -3,8 +3,12 @@ LABEL maintainer "Laurent Vergerolle <docker@ipeos.com>"
 
 RUN apt update
 
+# Install ghostscript
+RUN apt-get install --no-install-recommends -y \
+  ghostscript
+
 # Install mcrypt
-RUN apt install --no-install-recommends -y \
+RUN apt-get install --no-install-recommends -y \
     libmcrypt-dev \
   ; \
   docker-php-ext-install mcrypt
@@ -19,7 +23,7 @@ RUN apt-get install --no-install-recommends -y \
   docker-php-ext-install -j$(nproc) gd
 
 # Install mysql and sqlite
-RUN apt install --no-install-recommends -y \
+RUN apt-get install --no-install-recommends -y \
     mysql-client \
     libsqlite3-dev \
     libsqlite3-0 \
@@ -27,7 +31,7 @@ RUN apt install --no-install-recommends -y \
   docker-php-ext-install mysql pdo pdo_sqlite
 
 # Install curl
-RUN apt install --no-install-recommends -y \
+RUN apt-get install --no-install-recommends -y \
     curl \
     libcurl3 \
     libcurl3-dev \
