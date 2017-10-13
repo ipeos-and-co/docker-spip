@@ -39,7 +39,7 @@ fi
 if [ ! -e config/connect.php ]; then
 	# Wait for mysql before install
 	# cf. https://docs.docker.com/compose/startup-order/
-	if [ ${SPIP_VERSION} == '3.1' ] || [ ${SPIP_VERSION} == '3.0' ]; then
+	if [ ${SPIP_VERSION} == '3.2' ] || [ ${SPIP_VERSION} == '3.1' ] || [ ${SPIP_VERSION} == '3.0' ]; then
 		if [ ${SPIP_DB_SERVER} = "mysql" ]; then
 			until mysql -h ${SPIP_DB_HOST} -u ${SPIP_DB_LOGIN} -p${SPIP_DB_PASS}; do
 			  >&2 echo "mysql is unavailable - sleeping"

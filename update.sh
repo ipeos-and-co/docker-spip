@@ -2,24 +2,28 @@
 set -euo pipefail
 
 declare -A spipVersions=(
-  [0]='3.1'
+  [0]='2.1'
   [1]='3.0'
-  [2]='2.1'
+  [2]='3.1'
+  [3]='3.2'
 )
 declare -A phpVersions=(
-	[3.1]='7.1'
+  [2.1]='5.6'
 	[3.0]='5.6'
-	[2.1]='5.6'
+  [3.1]='7.1'
+	[3.2]='7.1'
 )
 declare -A spipPackages=(
-	[3.1]='3.1.6'
+  [2.1]='2-1.30'
 	[3.0]='3.0.26'
-	[2.1]='2-1.30'
+  [3.1]='3.1.7'
+	[3.2]='3.2.0'
 )
 declare -A mysqlPackages=(
-	[3.1]='mysqli'
-	[3.0]='mysql'
 	[2.1]='mysqli'
+  [3.0]='mysql'
+  [3.1]='mysqli'
+  [3.2]='mysqli'
 )
 
 for spipVersion in "${spipVersions[@]}"; do

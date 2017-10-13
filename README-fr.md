@@ -8,7 +8,8 @@ administrer le SPIP en ligne de commande à l'intérieur du docker.
 
 ## Tags supportés par les différents `Dockerfile`
 
-- `3.1`, `latest`
+- `3.2`, `latest`
+- `3.1`
 - `3.0`
 - `2.1`
 
@@ -29,6 +30,8 @@ docker run --name some-spip --link some-mysql:mysql -p 8080:80 -d ipeos/spip
 ```
 
 ## Variables d'environnement disponibles
+
+**L'auto-installation n'est disponible que pour les version 3.X de SPIP**
 
 - `SPIP_DB_SERVER`: mode de connexion à la base de donnée `sqlite3` ou `mysql` (par défaut : `mysql`)
 - `SPIP_DB_PREFIX`: prefixe des tables SQL (par défaut: `spip`)
