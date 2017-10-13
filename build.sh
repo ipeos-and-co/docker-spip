@@ -10,7 +10,7 @@ if [[ -z "$VERSION" ]]; then
 fi
 
 if [ $VERSION = "latest" ]; then
-  sudo docker build -t $TARGET 3.1
+  sudo docker build -t $TARGET 3.2
   exit 1;
 fi
 
