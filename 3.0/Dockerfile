@@ -81,7 +81,7 @@ RUN svn checkout svn://zone.spip.org/spip-zone/_outils_/spip-cli/trunk /opt/spip
 VOLUME ["/var/www/html"]
 
 ENV SPIP_VERSION 3.0
-ENV SPIP_PACKAGE 3.0.26
+ENV SPIP_PACKAGE 3.0.27
 
 # Install SPIP
 RUN set -ex; \
