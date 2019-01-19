@@ -39,46 +39,24 @@ fi
 if [ ! -e config/connect.php ]; then
 	# Wait for mysql before install
 	# cf. https://docs.docker.com/compose/startup-order/
-	if [ ${SPIP_VERSION} == '3.2' ] || [ ${SPIP_VERSION} == '3.1' ] || [ ${SPIP_VERSION} == '3.0' ]; then
-		if [ ${SPIP_DB_SERVER} = "mysql" ]; then
-			until mysql -h ${SPIP_DB_HOST} -u ${SPIP_DB_LOGIN} -p${SPIP_DB_PASS}; do
-			  >&2 echo "mysql is unavailable - sleeping"
-			  sleep 1
-			done
-		fi
-
-		spip install \
-			--db-server ${SPIP_DB_SERVER} \
-			--db-host ${SPIP_DB_HOST} \
-			--db-login ${SPIP_DB_LOGIN} \
-			--db-pass ${SPIP_DB_PASS} \
-			--db-database ${SPIP_DB_NAME} \
-			--db-prefix ${SPIP_DB_PREFIX} \
-			--admin-nom ${SPIP_ADMIN_NAME} \
-			--admin-login ${SPIP_ADMIN_LOGIN} \
-			--admin-email ${SPIP_ADMIN_EMAIL} \
-			--admin-pass ${SPIP_ADMIN_PASS}
-
-		# Fix bug can't create admin account for SPIP 3.0 by retry SPIP install
-		# Need to fix spip-cli "mysql_query() expects parameter 2 to be resource"
-		if [ ${SPIP_VERSION} == '3.0' ]; then
-			spip install \
-				--db-server ${SPIP_DB_SERVER} \
-				--db-host ${SPIP_DB_HOST} \
-				--db-login ${SPIP_DB_LOGIN} \
-				--db-pass ${SPIP_DB_PASS} \
-				--db-database ${SPIP_DB_NAME} \
-				--db-prefix ${SPIP_DB_PREFIX} \
-				--admin-nom ${SPIP_ADMIN_NAME} \
-				--admin-login ${SPIP_ADMIN_LOGIN} \
-				--admin-email ${SPIP_ADMIN_EMAIL} \
-				--admin-pass ${SPIP_ADMIN_PASS}
-		fi
+	if [ ${SPIP_DB_SERVER} = "mysql" ]; then
+		until mysql -h ${SPIP_DB_HOST} -u ${SPIP_DB_LOGIN} -p${SPIP_DB_PASS}; do
+		  >&2 echo "mysql is unavailable - sleeping"
+		  sleep 1
+		done
 	fi
 
-	if [ ${SPIP_VERSION} == '2.1' ]; then
-		>&2 echo "Can't auto install SPIP for this version"
-	fi
+	spip install \
+		--db-server ${SPIP_DB_SERVER} \
+		--db-host ${SPIP_DB_HOST} \
+		--db-login ${SPIP_DB_LOGIN} \
+		--db-pass ${SPIP_DB_PASS} \
+		--db-database ${SPIP_DB_NAME} \
+		--db-prefix ${SPIP_DB_PREFIX} \
+		--admin-nom ${SPIP_ADMIN_NAME} \
+		--admin-login ${SPIP_ADMIN_LOGIN} \
+		--admin-email ${SPIP_ADMIN_EMAIL} \
+		--admin-pass ${SPIP_ADMIN_PASS}
 fi
 
 exec "$@"

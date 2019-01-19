@@ -10,14 +10,12 @@ RUN apt-get install --no-install-recommends -y \
 # Install mcrypt
 RUN apt-get install --no-install-recommends -y \
     libmcrypt-dev \
-  ; \
-  docker-php-ext-install mcrypt
+    mcrypt
 
 # Install gd
 RUN apt-get install --no-install-recommends -y \
     libfreetype6-dev \
     libjpeg62-turbo-dev \
-    libpng12-dev \
   ; \
   docker-php-ext-configure gd --with-freetype-dir=/usr/include/ --with-jpeg-dir=/usr/include/; \
   docker-php-ext-install -j$(nproc) gd
@@ -28,7 +26,7 @@ RUN apt-get install --no-install-recommends -y \
     libsqlite3-dev \
     libsqlite3-0 \
   ; \
-  docker-php-ext-install %%MYSQL_PACKAGE%% pdo pdo_sqlite
+  docker-php-ext-install pdo %%MYSQL_PACKAGE%% pdo_sqlite
 
 # Install curl
 RUN apt-get install --no-install-recommends -y \
@@ -74,9 +72,15 @@ RUN { \
 RUN a2enmod rewrite
 
 # Install SPIP-Cli
+RUN cd /opt; \
+  curl --silent --show-error https://getcomposer.org/installer | php
+
 RUN svn checkout svn://zone.spip.org/spip-zone/_outils_/spip-cli/trunk /opt/spip-cli; \
   rm -rf /opt/spip-cli/.svn; \
-  ln -s /opt/spip-cli/spip.php /usr/local/bin/spip;
+  ln -s /opt/spip-cli/bin/spip /usr/local/bin/spip; \
+  ln -s /opt/spip-cli/bin/spipmu /usr/local/bin/spipmu;
+
+RUN cd /opt/spip-cli && /opt/composer.phar install
 
 VOLUME ["/var/www/html"]
 
