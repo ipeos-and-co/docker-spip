@@ -1,7 +1,7 @@
 FROM php:7.2-apache
 LABEL maintainer "Laurent Vergerolle <docker@ipeos.com>"
 
-RUN apt update
+RUN apt-get update
 
 # Install ghostscript
 RUN apt-get install --no-install-recommends -y \
@@ -21,20 +21,7 @@ RUN apt-get install --no-install-recommends -y \
   docker-php-ext-install -j$(nproc) gd
 
 # Install mysql and sqlite
-RUN apt-get install --no-install-recommends -y \
-    mysql-client \
-    libsqlite3-dev \
-    libsqlite3-0 \
-  ; \
-  docker-php-ext-install pdo mysqli pdo_sqlite
-
-# Install curl
-RUN apt-get install --no-install-recommends -y \
-    curl \
-    libcurl3 \
-    libcurl3-dev \
-  ; \
-  docker-php-ext-install curl
+RUN docker-php-ext-install mysqli
 
 # Install Imagick
 RUN apt-get install --no-install-recommends -y \
@@ -44,18 +31,14 @@ RUN apt-get install --no-install-recommends -y \
   docker-php-ext-enable imagick
 
 # Active over php extension
-RUN docker-php-ext-install zip mbstring json opcache
+RUN docker-php-ext-install zip opcache
 
-# Install utils and remove apt cache
+# Install utils
 RUN apt-get install --no-install-recommends -y \
     unzip \
     gettext-base \
     libsvn1 \
-    subversion \
-  ; \
-  apt-get clean; \
-  rm -rf /var/lib/apt/lists/*; \
-  rm /var/log/dpkg.log
+    subversion
 
 # set recommended PHP.ini settings
 # see https://secure.php.net/manual/en/opcache.installation.php
@@ -93,6 +76,15 @@ RUN set -ex; \
   unzip spip.zip -d /usr/src/; \
   rm spip.zip; \
   chown -R www-data:www-data /usr/src/spip
+
+# Remove SVN and apt cache
+RUN apt-get purge -y \
+    libsvn1 \
+    subversion \
+  ; \
+  apt-get clean; \
+  rm -rf /var/lib/apt/lists/*; \
+  rm /var/log/dpkg.log
 
 # SPIP
 ENV SPIP_DB_SERVER mysql

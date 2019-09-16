@@ -33,7 +33,7 @@ for spipVersion in "${spipVersions[@]}"; do
       -e 's!%%SPIP_VERSION%%!'"${spipVersion}"'!g' \
       -e 's!%%SPIP_PACKAGE%%!'"${spipPackages[$spipVersion]}"'!g' \
       -e 's!%%MYSQL_PACKAGE%%!'"${mysqlPackages[$spipVersion]}"'!g' \
-      "Dockerfile.template" > "./${spipVersion}/Dockerfile"
+      "Dockerfile${phpVersions[$spipVersion]}.template" > "./${spipVersion}/Dockerfile"
 
     cp -a ./docker-entrypoint.sh "./${spipVersion}/docker-entrypoint.sh"
     chmod +x "./${spipVersion}/docker-entrypoint.sh"
