@@ -82,7 +82,6 @@ RUN apt-get purge -y \
     libsvn1 \
     subversion \
   ; \
-  apt-get autoremove -y; \
   apt-get clean; \
   rm -rf /var/lib/apt/lists/*; \
   rm /var/log/dpkg.log
@@ -109,6 +108,8 @@ ENV PHP_TIMEZONE America/Guadeloupe
 EXPOSE 80
 
 COPY ./docker-entrypoint.sh /
+
+RUN chmod +x /docker-entrypoint.sh
 
 ENTRYPOINT ["/docker-entrypoint.sh"]
 
