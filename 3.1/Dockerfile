@@ -74,7 +74,7 @@ RUN cd /opt/spip-cli && /opt/composer.phar install
 VOLUME ["/var/www/html"]
 
 ENV SPIP_VERSION 3.1
-ENV SPIP_PACKAGE 3.1.11
+ENV SPIP_PACKAGE 3.1.12
 
 # Install SPIP
 RUN set -ex; \
