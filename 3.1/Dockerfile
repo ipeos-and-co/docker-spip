@@ -1,4 +1,4 @@
-FROM php:7.2-apache
+FROM php:7.4-apache
 LABEL maintainer "Laurent Vergerolle <docker@ipeos.com>"
 
 RUN apt-get update
@@ -43,8 +43,7 @@ RUN docker-php-ext-install zip opcache
 RUN apt-get install --no-install-recommends -y \
     unzip \
     gettext-base \
-    libsvn1 \
-    subversion
+    git
 
 # set recommended PHP.ini settings
 # see https://secure.php.net/manual/en/opcache.installation.php
@@ -64,8 +63,10 @@ RUN a2enmod rewrite
 RUN cd /opt; \
   curl --silent --show-error https://getcomposer.org/installer | php
 
-RUN svn checkout svn://zone.spip.org/spip-zone/_outils_/spip-cli/trunk /opt/spip-cli; \
-  rm -rf /opt/spip-cli/.svn; \
+RUN git clone https://git.spip.net/spip-contrib-outils/spip-cli.git /opt/spip-cli; \
+  rm -rf /opt/spip-cli/.git; \
+  rm -rf /opt/spip-cli/.gitattributes; \
+  rm -rf /opt/spip-cli/.gitignore; \
   ln -s /opt/spip-cli/bin/spip /usr/local/bin/spip; \
   ln -s /opt/spip-cli/bin/spipmu /usr/local/bin/spipmu;
 
@@ -74,12 +75,12 @@ RUN cd /opt/spip-cli && /opt/composer.phar install
 VOLUME ["/var/www/html"]
 
 ENV SPIP_VERSION 3.1
-ENV SPIP_PACKAGE 3.1.12
+ENV SPIP_PACKAGE 3.1.13
 
 # Install SPIP
 RUN set -ex; \
-  curl -o spip.zip -fSL "files.spip.net/spip/archives/SPIP-v${SPIP_PACKAGE}.zip"; \
-  unzip spip.zip -d /usr/src/; \
+  curl -o spip.zip -fSL "files.spip.net/spip/archives/spip-v${SPIP_PACKAGE}.zip"; \
+  unzip spip.zip -d /usr/src/spip; \
   rm spip.zip; \
   chown -R www-data:www-data /usr/src/spip
 

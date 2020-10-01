@@ -18,44 +18,32 @@ RUN apt-get install --no-install-recommends -y \
     libjpeg62-turbo-dev \
   ; \
   docker-php-ext-configure gd --with-freetype-dir=/usr/include/ --with-jpeg-dir=/usr/include/; \
-  docker-php-ext-install -j$(nproc) gd
+  docker-php-ext-install -j$(nproc) gd exif bcmath
 
-# Install mysql and sqlite
+# Install mysql
 RUN apt-get install --no-install-recommends -y \
-    mysql-client \
-    libsqlite3-dev \
-    libsqlite3-0 \
+    default-mysql-client \
   ; \
-  docker-php-ext-install pdo %%MYSQL_PACKAGE%% pdo_sqlite
-
-# Install curl
-RUN apt-get install --no-install-recommends -y \
-    curl \
-    libcurl3 \
-    libcurl3-dev \
-  ; \
-  docker-php-ext-install curl
+  docker-php-ext-install %%MYSQL_PACKAGE%%
 
 # Install Imagick
 RUN apt-get install --no-install-recommends -y \
+    libjpeg-dev \
     libmagickwand-dev \
+    libpng-dev \
+    libzip-dev \
   ; \
   pecl install imagick; \
   docker-php-ext-enable imagick
 
 # Active over php extension
-RUN docker-php-ext-install zip mbstring json opcache
+RUN docker-php-ext-install zip opcache
 
-# Install utils and remove apt cache
+# Install utils
 RUN apt-get install --no-install-recommends -y \
     unzip \
     gettext-base \
-    libsvn1 \
-    subversion \
-  ; \
-  apt-get clean; \
-  rm -rf /var/lib/apt/lists/*; \
-  rm /var/log/dpkg.log
+    git
 
 # set recommended PHP.ini settings
 # see https://secure.php.net/manual/en/opcache.installation.php
@@ -75,8 +63,10 @@ RUN a2enmod rewrite
 RUN cd /opt; \
   curl --silent --show-error https://getcomposer.org/installer | php
 
-RUN svn checkout svn://zone.spip.org/spip-zone/_outils_/spip-cli/trunk /opt/spip-cli; \
-  rm -rf /opt/spip-cli/.svn; \
+RUN git clone https://git.spip.net/spip-contrib-outils/spip-cli.git /opt/spip-cli; \
+  rm -rf /opt/spip-cli/.git; \
+  rm -rf /opt/spip-cli/.gitattributes; \
+  rm -rf /opt/spip-cli/.gitignore; \
   ln -s /opt/spip-cli/bin/spip /usr/local/bin/spip; \
   ln -s /opt/spip-cli/bin/spipmu /usr/local/bin/spipmu;
 
@@ -89,10 +79,19 @@ ENV SPIP_PACKAGE %%SPIP_PACKAGE%%
 
 # Install SPIP
 RUN set -ex; \
-  curl -o spip.zip -fSL "files.spip.net/spip/archives/SPIP-v${SPIP_PACKAGE}.zip"; \
-  unzip spip.zip -d /usr/src/; \
+  curl -o spip.zip -fSL "files.spip.net/spip/archives/spip-v${SPIP_PACKAGE}.zip"; \
+  unzip spip.zip -d /usr/src/spip; \
   rm spip.zip; \
   chown -R www-data:www-data /usr/src/spip
+
+# Remove SVN and apt cache
+RUN apt-get purge -y \
+    libsvn1 \
+    subversion \
+  ; \
+  apt-get clean; \
+  rm -rf /var/lib/apt/lists/*; \
+  rm /var/log/dpkg.log
 
 # SPIP
 ENV SPIP_DB_SERVER mysql

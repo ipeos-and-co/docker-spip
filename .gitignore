@@ -15,4 +15,3 @@ Thumbs.db
 # Other
 *.retry
 credentials
-docker-compose.yml

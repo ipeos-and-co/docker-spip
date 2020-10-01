@@ -1,0 +1,45 @@
+version: '3'
+services:
+  db31:
+    image: mariadb:10
+    restart: always
+    environment:
+      - MYSQL_RANDOM_ROOT_PASSWORD=1
+      - MYSQL_DATABASE=spip
+      - MYSQL_USER=spip
+      - MYSQL_PASSWORD=spip
+
+  spip31:
+    image: ipeos/spip:3.1
+    restart: always
+    links:
+      - db31:mysql
+    environment:
+      - SPIP_DB_SERVER=mysql
+      - SPIP_DB_LOGIN=spip
+      - SPIP_DB_PASS=spip
+      - SPIP_DB_NAME=spip
+    ports:
+      - 8031:80
+
+  db32:
+    image: mariadb:10
+    restart: always
+    environment:
+      - MYSQL_RANDOM_ROOT_PASSWORD=1
+      - MYSQL_DATABASE=spip
+      - MYSQL_USER=spip
+      - MYSQL_PASSWORD=spip
+
+  spip32:
+    image: ipeos/spip:3.2
+    restart: always
+    links:
+      - db32:mysql
+    environment:
+      - SPIP_DB_SERVER=mysql
+      - SPIP_DB_LOGIN=spip
+      - SPIP_DB_PASS=spip
+      - SPIP_DB_NAME=spip
+    ports:
+      - 8032:80
