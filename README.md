@@ -8,9 +8,8 @@ This docker use [SPIP-cli](https://contrib.spip.net/SPIP-Cli) project to manage 
 
 - `3.2`, `latest`
 - `3.1`
-- `3.0`
 
-**Remove 2.1 tag support**
+**Remove 3.0 tag support**
 
 ## Installation
 
