@@ -1,4 +1,4 @@
-FROM php:7.4-apache
+FROM php:7.2-apache
 LABEL maintainer "Laurent Vergerolle <docker@ipeos.com>"
 
 RUN apt-get update

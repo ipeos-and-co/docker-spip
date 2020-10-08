@@ -6,8 +6,8 @@ declare -A spipVersions=(
   [1]='3.2'
 )
 declare -A phpVersions=(
-  [3.1]='7.4'
-	[3.2]='7.4'
+  [3.1]='7.2'
+	[3.2]='7.2'
 )
 declare -A spipPackages=(
   [3.1]='3.1.13'
