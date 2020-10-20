@@ -1,8 +1,5 @@
 # Docker SPIP
 
-**ALERT: Back to PHP 7.2 for GD library support**
-*If your SPIP 3.2 or 3.1 use php 7.4 pull to the latest image.*
-
 Dockerfile to provide a ready to use SPIP in production.
 
 This docker use [SPIP-cli](https://contrib.spip.net/SPIP-Cli) project to manage an auto install for SPIP. It can be use to manage the SPIP with command line.
