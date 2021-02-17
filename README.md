@@ -6,8 +6,8 @@ This docker use [SPIP-cli](https://contrib.spip.net/SPIP-Cli) project to manage 
 
 ## Supported Tags Respective `Dockerfile` Links
 
-- `3.2`, `latest`
-- `3.1`
+- `3.2`, `3.2.9`, `latest`
+- `3.1`, `3.1.15`
 
 **Remove 3.0 tag support**
 
@@ -64,12 +64,12 @@ This image was created by [IPEOS](http://www.ipeos.com) for a purpose of web dev
 
 If you find this image useful here's how you can help:
 
-* Send a Pull Request with your awesome enhancements and bug fixes
-* Be a part of the community and help resolve Issues
+- Send a Pull Request with your awesome enhancements and bug fixes
+- Be a part of the community and help resolve Issues
 
 ## Team
 
 ### IPEOS
 
-* [Laurent Vergerolle](https://github.com/psychoz971/)
-* [Olivier Watté](https://github.com/owatte/)
+- [Laurent Vergerolle](https://github.com/psychoz971/)
+- [Olivier Watté](https://github.com/owatte/)

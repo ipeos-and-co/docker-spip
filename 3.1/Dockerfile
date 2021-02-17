@@ -72,10 +72,10 @@ RUN git clone https://git.spip.net/spip-contrib-outils/spip-cli.git /opt/spip-cl
 
 RUN cd /opt/spip-cli && /opt/composer.phar install
 
-VOLUME ["/var/www/html"]
+VOLUME ["/var/www/html", "/var/www/html/config", "/var/www/html/IMG", "/var/www/html/lib", "/var/www/html/local", "/var/www/html/plugins", "/var/www/html/squelettes", "/var/www/html/tmp"]
 
 ENV SPIP_VERSION 3.1
-ENV SPIP_PACKAGE 3.1.14
+ENV SPIP_PACKAGE 3.1.15
 
 # Install SPIP
 RUN set -ex; \

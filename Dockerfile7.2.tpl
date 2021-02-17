@@ -72,7 +72,7 @@ RUN git clone https://git.spip.net/spip-contrib-outils/spip-cli.git /opt/spip-cl
 
 RUN cd /opt/spip-cli && /opt/composer.phar install
 
-VOLUME ["/var/www/html"]
+VOLUME ["/var/www/html", "/var/www/html/config", "/var/www/html/IMG", "/var/www/html/lib", "/var/www/html/local", "/var/www/html/plugins", "/var/www/html/squelettes", "/var/www/html/tmp"]
 
 ENV SPIP_VERSION %%SPIP_VERSION%%
 ENV SPIP_PACKAGE %%SPIP_PACKAGE%%
