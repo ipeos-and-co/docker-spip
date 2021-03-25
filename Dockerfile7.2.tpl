@@ -116,7 +116,7 @@ ENV PHP_TIMEZONE Europe/Paris
 
 EXPOSE 80
 
-COPY ../docker-entrypoint.sh /
+COPY ./docker-entrypoint.sh /
 
 RUN chmod +x /docker-entrypoint.sh
 
