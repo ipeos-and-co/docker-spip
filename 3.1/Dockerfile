@@ -1,49 +1,53 @@
 FROM php:7.2-apache
-LABEL maintainer "Laurent Vergerolle <docker@ipeos.com>"
+LABEL maintainer "Michael Nival <docker@mn-home.fr>"
 
-RUN apt-get update
+RUN set -eux; \
+	apt-get update; \
+	apt-get install -y --no-install-recommends \
+		ghostscript \
+	; \
+	rm -rf /var/lib/apt/lists/*;
 
-# Install ghostscript
-RUN apt-get install --no-install-recommends -y \
-  ghostscript
-
-# Install mcrypt
-RUN apt-get install --no-install-recommends -y \
-    libmcrypt-dev \
-    mcrypt
-
-# Install gd
-RUN apt-get install --no-install-recommends -y \
-    libfreetype6-dev \
-    libjpeg62-turbo-dev \
-  ; \
-  docker-php-ext-configure gd --with-freetype-dir=/usr/include/ --with-jpeg-dir=/usr/include/; \
-  docker-php-ext-install -j$(nproc) gd exif bcmath
-
-# Install mysql
-RUN apt-get install --no-install-recommends -y \
-    default-mysql-client \
-  ; \
-  docker-php-ext-install mysqli
-
-# Install Imagick
-RUN apt-get install --no-install-recommends -y \
-    libjpeg-dev \
-    libmagickwand-dev \
-    libpng-dev \
-    libzip-dev \
-  ; \
-  pecl install imagick; \
-  docker-php-ext-enable imagick
-
-# Active over php extension
-RUN docker-php-ext-install zip opcache
-
-# Install utils
-RUN apt-get install --no-install-recommends -y \
-    unzip \
-    gettext-base \
-    git
+RUN set -ex; \
+	\
+	savedAptMark="$(apt-mark showmanual)"; \
+	\
+		apt-get update; \
+		apt-get install -y --no-install-recommends \
+			libmcrypt-dev \
+			libfreetype6-dev \
+			libjpeg62-turbo-dev \
+			libjpeg-dev \
+			libmagickwand-dev \
+			libpng-dev \
+			libzip-dev \
+		; \
+		debMultiarch="$(dpkg-architecture --query DEB_BUILD_MULTIARCH)"; \
+		docker-php-ext-configure gd --with-freetype-dir=/usr/include/ --with-jpeg-dir=/usr/include/; \
+		docker-php-ext-install -j$(nproc) \
+			gd \
+			exif \
+			bcmath \
+			mysqli \
+			zip \
+			opcache \
+		; \
+		\
+		pecl install imagick; \
+		docker-php-ext-enable imagick; \
+	# reset apt-mark's "manual" list so that "purge --auto-remove" will remove all build dependencies
+	apt-mark auto '.*' > /dev/null; \
+	apt-mark manual $savedAptMark; \
+	ldd "$(php -r 'echo ini_get("extension_dir");')"/*.so \
+		| awk '/=>/ { print $3 }' \
+		| sort -u \
+		| xargs -r dpkg-query -S \
+		| cut -d: -f1 \
+		| sort -u \
+		| xargs -rt apt-mark manual; \
+	\
+	apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false; \
+	rm -rf /var/lib/apt/lists/*
 
 # set recommended PHP.ini settings
 # see https://secure.php.net/manual/en/opcache.installation.php
@@ -59,39 +63,37 @@ RUN { \
 # Active apache rewrite mode
 RUN a2enmod rewrite
 
-# Install SPIP-Cli
-RUN cd /opt; \
-  curl --silent --show-error https://getcomposer.org/installer | php
-
-RUN git clone https://git.spip.net/spip-contrib-outils/spip-cli.git /opt/spip-cli; \
-  rm -rf /opt/spip-cli/.git; \
-  rm -rf /opt/spip-cli/.gitattributes; \
-  rm -rf /opt/spip-cli/.gitignore; \
-  ln -s /opt/spip-cli/bin/spip /usr/local/bin/spip; \
-  ln -s /opt/spip-cli/bin/spipmu /usr/local/bin/spipmu;
-
-RUN cd /opt/spip-cli && /opt/composer.phar install
-
-VOLUME ["/var/www/html", "/var/www/html/config", "/var/www/html/IMG", "/var/www/html/lib", "/var/www/html/local", "/var/www/html/plugins", "/var/www/html/squelettes", "/var/www/html/tmp"]
-
 ENV SPIP_VERSION 3.1
 ENV SPIP_PACKAGE 3.1.15
 
-# Install SPIP
+# Install SPIP-Cli
 RUN set -ex; \
-  curl -o spip.zip -fSL "files.spip.net/spip/archives/spip-v${SPIP_PACKAGE}.zip"; \
-  unzip spip.zip -d /usr/src/spip; \
-  rm spip.zip; \
-  chown -R www-data:www-data /usr/src/spip
+	cd /opt; \
+	curl --silent --show-error https://getcomposer.org/installer | php; \
+	fetchDeps=" \
+		git \
+		unzip \
+	"; \
+	apt-get update; \
+	apt-get install -y --no-install-recommends $fetchDeps; \
+	\
+	git clone https://git.spip.net/spip-contrib-outils/spip-cli.git /opt/spip-cli; \
+	rm -rf /opt/spip-cli/.git; \
+	rm -rf /opt/spip-cli/.gitattributes; \
+	rm -rf /opt/spip-cli/.gitignore; \
+	ln -s /opt/spip-cli/bin/spip /usr/local/bin/spip; \
+	ln -s /opt/spip-cli/bin/spipmu /usr/local/bin/spipmu; \
+	cd /opt/spip-cli && /opt/composer.phar install; \
+	\
+	curl -o spip.zip -fSL "files.spip.net/spip/archives/spip-v${SPIP_PACKAGE}.zip"; \
+	unzip spip.zip -d /usr/src/spip; \
+	rm spip.zip; \
+	chown -R www-data:www-data /usr/src/spip; \
+	\
+	apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false $fetchDeps; \
+	rm -rf /var/lib/apt/lists/*
 
-# Remove SVN and apt cache
-RUN apt-get purge -y \
-    libsvn1 \
-    subversion \
-  ; \
-  apt-get clean; \
-  rm -rf /var/lib/apt/lists/*; \
-  rm /var/log/dpkg.log
+VOLUME ["/var/www/html"]
 
 # SPIP
 ENV SPIP_DB_SERVER mysql
@@ -110,7 +112,7 @@ ENV PHP_MAX_EXECUTION_TIME 60
 ENV PHP_MEMORY_LIMIT 256M
 ENV PHP_POST_MAX_SIZE 40M
 ENV PHP_UPLOAD_MAX_FILESIZE 32M
-ENV PHP_TIMEZONE America/Guadeloupe
+ENV PHP_TIMEZONE Europe/Paris
 
 EXPOSE 80
 

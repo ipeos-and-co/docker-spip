@@ -1,6 +1,14 @@
 #!/bin/bash
 set -e
 
+run_as() {
+	if [ "$(id -u)" = 0 ]; then
+		su -p www-data -s /bin/sh -c "$1"
+	else
+		sh -c "$1"
+	fi
+}
+
 # version_greater A B returns whether A > B
 version_greater() {
     [ "$(printf '%s\n' "$@" | sort -t '.' -n -k1,1 -k2,2 -k3,3 | head -n 1)" != "$1" ]
@@ -52,7 +60,7 @@ if version_greater "$image_version" "$installed_version"; then
 	chown -R www-data:www-data plugins lib squelettes tmp
 
 	if [ ! -e .htaccess ]; then
-		cp htaccess.txt .htaccess
+		cp -p htaccess.txt .htaccess
 		chown www-data:www-data .htaccess
 	fi
 
@@ -66,14 +74,9 @@ if version_greater "$image_version" "$installed_version"; then
 	if [ ! -e config/connect.php ]; then
 		# Wait for mysql before install
 		# cf. https://docs.docker.com/compose/startup-order/
-		if [ ${SPIP_DB_SERVER} = "mysql" ]; then
-			until mysql -h ${SPIP_DB_HOST} -u ${SPIP_DB_LOGIN} -p${SPIP_DB_PASS}; do
-			>&2 echo "mysql is unavailable - sleeping"
-			sleep 1
-			done
-		fi
-
-		spip install \
+		max_retries=10
+		try=0
+		until run_as "spip install \
 			--db-server ${SPIP_DB_SERVER} \
 			--db-host ${SPIP_DB_HOST} \
 			--db-login ${SPIP_DB_LOGIN} \
@@ -83,7 +86,15 @@ if version_greater "$image_version" "$installed_version"; then
 			--admin-nom ${SPIP_ADMIN_NAME} \
 			--admin-login ${SPIP_ADMIN_LOGIN} \
 			--admin-email ${SPIP_ADMIN_EMAIL} \
-			--admin-pass ${SPIP_ADMIN_PASS}
+			--admin-pass ${SPIP_ADMIN_PASS}" || [ "$try" -gt "$max_retries" ]; do
+				echo "retrying install..."
+				try=$((try+1))
+				sleep 10s
+		done
+		if [ "$try" -gt "$max_retries" ]; then
+			echo "installing of spip failed!"
+			exit 1
+		fi
 	fi
 fi
 
