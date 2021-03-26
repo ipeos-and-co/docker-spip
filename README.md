@@ -56,11 +56,9 @@ Can change PHP vars to optimize your installation.
 - `PHP_MEMORY_LIMIT` (default: `256M`)
 - `PHP_POST_MAX_SIZE` (default: `40M`)
 - `PHP_UPLOAD_MAX_FILESIZE` (default `32M`)
-- `PHP_TIMEZONE` (default: `America/Guadeloupe`)
+- `PHP_TIMEZONE` (default: `Europe/Paris`)
 
 ## Contributing
-
-This image was created by [IPEOS](http://www.ipeos.com) for a purpose of web development training courses.
 
 If you find this image useful here's how you can help:
 
