@@ -6,7 +6,7 @@ This docker use [SPIP-cli](https://contrib.spip.net/SPIP-Cli) project to manage 
 
 ## Supported Tags Respective `Dockerfile` Links
 
-- `3.2`, `3.2.9`, `latest`
+- `3.2`, `3.2.11`, `latest`
 - `3.1`, `3.1.15`
 
 **Remove 3.0 tag support**
