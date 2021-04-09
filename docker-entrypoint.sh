@@ -18,8 +18,8 @@ installed_version="0.0.0"
 image_version="0.0.1"
 
 if [ -f "/var/www/html/ecrire/inc_version.php" ]; then
-	installed_version=$(php -r 'require "/var/www/html/ecrire/inc_version.php"; echo $spip_version_affichee;')
-	image_version=$(php -r 'require "/usr/src/spip/ecrire/inc_version.php"; echo $spip_version_affichee;')
+	installed_version=$(php -d "display_errors=off" -r 'require "/var/www/html/ecrire/inc_version.php"; echo $spip_version_affichee;')
+	image_version=$(php -d "display_errors=off" -r 'require "/usr/src/spip/ecrire/inc_version.php"; echo $spip_version_affichee;')
 fi
 
 echo $installed_version
