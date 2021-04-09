@@ -1,4 +1,4 @@
-FROM php:7.2-apache
+FROM php:7.4-apache
 LABEL maintainer "Michael Nival <docker@mn-home.fr>"
 
 RUN set -eux; \
@@ -23,7 +23,7 @@ RUN set -ex; \
 			libzip-dev \
 		; \
 		debMultiarch="$(dpkg-architecture --query DEB_BUILD_MULTIARCH)"; \
-		docker-php-ext-configure gd --with-freetype-dir=/usr/include/ --with-jpeg-dir=/usr/include/; \
+		docker-php-ext-configure gd --with-freetype --with-jpeg; \
 		docker-php-ext-install -j$(nproc) \
 			gd \
 			exif \
@@ -64,7 +64,7 @@ RUN { \
 RUN a2enmod rewrite
 
 ENV SPIP_VERSION 3.2
-ENV SPIP_PACKAGE 3.2.9
+ENV SPIP_PACKAGE 3.2.11
 
 # Install SPIP-Cli
 RUN set -ex; \
