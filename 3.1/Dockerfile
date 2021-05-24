@@ -1,5 +1,6 @@
 FROM php:7.2-apache
-LABEL maintainer "Michael Nival <docker@mn-home.fr>"
+LABEL maintainer="docker@ipeos.com"
+LABEL authors="Laurent Vergerolle <docker@ipeos.com>, Michael Nival <docker@mn-home.fr>"
 
 RUN set -eux; \
 	apt-get update; \
@@ -112,7 +113,7 @@ ENV PHP_MAX_EXECUTION_TIME 60
 ENV PHP_MEMORY_LIMIT 256M
 ENV PHP_POST_MAX_SIZE 40M
 ENV PHP_UPLOAD_MAX_FILESIZE 32M
-ENV PHP_TIMEZONE Europe/Paris
+ENV PHP_TIMEZONE America/Guadeloupe
 
 EXPOSE 80
 

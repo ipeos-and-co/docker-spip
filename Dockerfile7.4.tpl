@@ -1,4 +1,5 @@
 FROM php:%%PHP_VERSION%%-apache
+LABEL maintainer="docker@ipeos.com"
 LABEL authors="Laurent Vergerolle <docker@ipeos.com>, Michael Nival <docker@mn-home.fr>"
 
 RUN set -eux; \

@@ -74,7 +74,7 @@ if version_greater "$image_version" "$installed_version"; then
 	if [ ! -e config/connect.php ]; then
 		# Wait for mysql before install
 		# cf. https://docs.docker.com/compose/startup-order/
-		max_retries=10
+		max_retries=20
 		try=0
 		until run_as "spip install \
 			--db-server ${SPIP_DB_SERVER} \
