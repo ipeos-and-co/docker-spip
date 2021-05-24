@@ -1,4 +1,4 @@
-FROM php:7.4-apache
+FROM php:%%PHP_VERSION%%-apache
 LABEL maintainer="docker@ipeos.com"
 LABEL authors="Laurent Vergerolle <docker@ipeos.com>, Michael Nival <docker@mn-home.fr>"
 
@@ -29,7 +29,7 @@ RUN set -ex; \
 			gd \
 			exif \
 			bcmath \
-			mysqli \
+			%%MYSQL_PACKAGE%% \
 			zip \
 			opcache \
 		; \
@@ -64,8 +64,8 @@ RUN { \
 # Active apache rewrite mode
 RUN a2enmod rewrite
 
-ENV SPIP_VERSION 3.2
-ENV SPIP_PACKAGE 3.2.11
+ENV SPIP_VERSION %%SPIP_VERSION%%
+ENV SPIP_PACKAGE %%SPIP_PACKAGE%%
 
 # Install SPIP-Cli
 RUN set -ex; \
