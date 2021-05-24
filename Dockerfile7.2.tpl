@@ -6,6 +6,7 @@ RUN set -eux; \
 	apt-get update; \
 	apt-get install -y --no-install-recommends \
 		ghostscript \
+		default-mysql-client \
 	; \
 	rm -rf /var/lib/apt/lists/*;
 
