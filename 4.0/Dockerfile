@@ -84,7 +84,7 @@ RUN set -ex; \
     ln -s /opt/spip-cli/bin/spipmu /usr/local/bin/spipmu; \
     cd /opt/spip-cli && /opt/composer.phar install; \
     \
-    curl -o spip.zip -fSL "files.spip.net/spip/dev/spip-v4.0.0-alpha.zip"; \
+    curl -o spip.zip -fSL "files.spip.net/spip/dev/spip-v4.0.0-beta.zip"; \
     unzip spip.zip -d /usr/src/spip; \
     rm spip.zip; \
     chown -R www-data:www-data /usr/src/spip; \
