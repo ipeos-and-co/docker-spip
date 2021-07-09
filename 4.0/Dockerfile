@@ -3,94 +3,97 @@ LABEL maintainer="docker@ipeos.com"
 LABEL authors="Laurent Vergerolle <docker@ipeos.com>, Michael Nival <docker@mn-home.fr>"
 
 RUN set -eux; \
-    apt-get update; \
-    apt-get install -y --no-install-recommends \
-    ghostscript \
-    default-mysql-client \
-    ; \
-    rm -rf /var/lib/apt/lists/*;
+	apt-get update; \
+	apt-get install -y --no-install-recommends \
+		ghostscript \
+		default-mysql-client \
+	; \
+	rm -rf /var/lib/apt/lists/*;
 
 RUN set -ex; \
-    \
-    savedAptMark="$(apt-mark showmanual)"; \
-    \
-    apt-get update; \
-    apt-get install -y --no-install-recommends \
-    libmcrypt-dev \
-    libfreetype6-dev \
-    libjpeg62-turbo-dev \
-    libjpeg-dev \
-    libmagickwand-dev \
-    libpng-dev \
-    libzip-dev \
-    ; \
-    debMultiarch="$(dpkg-architecture --query DEB_BUILD_MULTIARCH)"; \
-    docker-php-ext-configure gd --with-freetype --with-jpeg; \
-    docker-php-ext-install -j$(nproc) \
-    gd \
-    exif \
-    bcmath \
-    mysqli \
-    zip \
-    opcache \
-    ; \
-    \
-    pecl install imagick; \
-    docker-php-ext-enable imagick; \
-    # reset apt-mark's "manual" list so that "purge --auto-remove" will remove all build dependencies
-    apt-mark auto '.*' > /dev/null; \
-    apt-mark manual $savedAptMark; \
-    ldd "$(php -r 'echo ini_get("extension_dir");')"/*.so \
-    | awk '/=>/ { print $3 }' \
-    | sort -u \
-    | xargs -r dpkg-query -S \
-    | cut -d: -f1 \
-    | sort -u \
-    | xargs -rt apt-mark manual; \
-    \
-    apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false; \
-    rm -rf /var/lib/apt/lists/*
+	\
+	savedAptMark="$(apt-mark showmanual)"; \
+	\
+		apt-get update; \
+		apt-get install -y --no-install-recommends \
+			libmcrypt-dev \
+			libfreetype6-dev \
+			libjpeg62-turbo-dev \
+			libjpeg-dev \
+			libmagickwand-dev \
+			libpng-dev \
+			libzip-dev \
+		; \
+		debMultiarch="$(dpkg-architecture --query DEB_BUILD_MULTIARCH)"; \
+		docker-php-ext-configure gd --with-freetype --with-jpeg; \
+		docker-php-ext-install -j$(nproc) \
+			gd \
+			exif \
+			bcmath \
+			mysqli \
+			zip \
+			opcache \
+		; \
+		\
+		pecl install imagick; \
+		docker-php-ext-enable imagick; \
+	# reset apt-mark's "manual" list so that "purge --auto-remove" will remove all build dependencies
+	apt-mark auto '.*' > /dev/null; \
+	apt-mark manual $savedAptMark; \
+	ldd "$(php -r 'echo ini_get("extension_dir");')"/*.so \
+		| awk '/=>/ { print $3 }' \
+		| sort -u \
+		| xargs -r dpkg-query -S \
+		| cut -d: -f1 \
+		| sort -u \
+		| xargs -rt apt-mark manual; \
+	\
+	apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false; \
+	rm -rf /var/lib/apt/lists/*
 
 # set recommended PHP.ini settings
 # see https://secure.php.net/manual/en/opcache.installation.php
 RUN { \
-    echo 'opcache.memory_consumption=128'; \
-    echo 'opcache.interned_strings_buffer=8'; \
-    echo 'opcache.max_accelerated_files=4000'; \
-    echo 'opcache.revalidate_freq=2'; \
-    echo 'opcache.fast_shutdown=1'; \
-    echo 'opcache.enable_cli=0'; \
-    } > /usr/local/etc/php/conf.d/opcache-recommended.ini
+		echo 'opcache.memory_consumption=128'; \
+		echo 'opcache.interned_strings_buffer=8'; \
+		echo 'opcache.max_accelerated_files=4000'; \
+		echo 'opcache.revalidate_freq=2'; \
+		echo 'opcache.fast_shutdown=1'; \
+		echo 'opcache.enable_cli=0'; \
+} > /usr/local/etc/php/conf.d/opcache-recommended.ini
 
 # Active apache rewrite mode
 RUN a2enmod rewrite
 
+ENV SPIP_VERSION 4.0
+ENV SPIP_PACKAGE 4.0.0
+
 # Install SPIP-Cli
 RUN set -ex; \
-    cd /opt; \
-    curl --silent --show-error https://getcomposer.org/installer | php; \
-    fetchDeps=" \
-    git \
-    unzip \
-    "; \
-    apt-get update; \
-    apt-get install -y --no-install-recommends $fetchDeps; \
-    \
-    git clone https://git.spip.net/spip-contrib-outils/spip-cli.git /opt/spip-cli; \
-    rm -rf /opt/spip-cli/.git; \
-    rm -rf /opt/spip-cli/.gitattributes; \
-    rm -rf /opt/spip-cli/.gitignore; \
-    ln -s /opt/spip-cli/bin/spip /usr/local/bin/spip; \
-    ln -s /opt/spip-cli/bin/spipmu /usr/local/bin/spipmu; \
-    cd /opt/spip-cli && /opt/composer.phar install; \
-    \
-    curl -o spip.zip -fSL "files.spip.net/spip/dev/spip-v4.0.0-beta.zip"; \
-    unzip spip.zip -d /usr/src/spip; \
-    rm spip.zip; \
-    chown -R www-data:www-data /usr/src/spip; \
-    \
-    apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false $fetchDeps; \
-    rm -rf /var/lib/apt/lists/*
+	cd /opt; \
+	curl --silent --show-error https://getcomposer.org/installer | php; \
+	fetchDeps=" \
+		git \
+		unzip \
+	"; \
+	apt-get update; \
+	apt-get install -y --no-install-recommends $fetchDeps; \
+	\
+	git clone https://git.spip.net/spip-contrib-outils/spip-cli.git /opt/spip-cli; \
+	rm -rf /opt/spip-cli/.git; \
+	rm -rf /opt/spip-cli/.gitattributes; \
+	rm -rf /opt/spip-cli/.gitignore; \
+	ln -s /opt/spip-cli/bin/spip /usr/local/bin/spip; \
+	ln -s /opt/spip-cli/bin/spipmu /usr/local/bin/spipmu; \
+	cd /opt/spip-cli && /opt/composer.phar install; \
+	\
+	curl -o spip.zip -fSL "files.spip.net/spip/archives/spip-v${SPIP_PACKAGE}.zip"; \
+	unzip spip.zip -d /usr/src/spip; \
+	rm spip.zip; \
+	chown -R www-data:www-data /usr/src/spip; \
+	\
+	apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false $fetchDeps; \
+	rm -rf /var/lib/apt/lists/*
 
 VOLUME ["/var/www/html"]
 
