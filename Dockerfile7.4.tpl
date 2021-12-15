@@ -6,7 +6,7 @@ RUN set -eux; \
 	apt-get update; \
 	apt-get install -y --no-install-recommends \
 		ghostscript \
-		default-mysql-client \
+		netcat \
 	; \
 	rm -rf /var/lib/apt/lists/*;
 
@@ -98,6 +98,7 @@ RUN set -ex; \
 VOLUME ["/var/www/html"]
 
 # SPIP
+ENV SPIP_AUTO_INSTALL 1
 ENV SPIP_DB_SERVER mysql
 ENV SPIP_DB_HOST mysql
 ENV SPIP_DB_LOGIN spip

@@ -14,12 +14,19 @@ version_greater() {
     [ "$(printf '%s\n' "$@" | sort -t '.' -n -k1,1 -k2,2 -k3,3 | head -n 1)" != "$1" ]
 }
 
+wait_for_db() {
+	until nc -z -v -w60 "${SPIP_DB_HOST}" "3306"; do
+		echo "Waiting for database ready..."
+		sleep 5
+	done
+}
+
 installed_version="0.0.0"
 image_version="0.0.1"
 
 if [ -f "/var/www/html/ecrire/inc_version.php" ]; then
-	installed_version=$(php -d "display_errors=off" -r 'require "/var/www/html/ecrire/inc_version.php"; echo $spip_version_affichee;')
-	image_version=$(php -d "display_errors=off" -r 'require "/usr/src/spip/ecrire/inc_version.php"; echo $spip_version_affichee;')
+	installed_version=$(grep -i /var/www/html/ecrire/inc_version.php  -e '\$spip_version_branche =' | cut -d '=' -f 2 | cut -d ';' -f 1 | cut -d "'" -f 2 | cut -d '"' -f 2)
+	image_version=$(grep -i /usr/src/spip/ecrire/inc_version.php  -e '\$spip_version_branche =' | cut -d '=' -f 2 | cut -d ';' -f 1 | cut -d "'" -f 2 | cut -d '"' -f 2)
 fi
 
 echo $installed_version
@@ -69,39 +76,26 @@ if version_greater "$image_version" "$installed_version"; then
 		spip core:maj:bdd
 		spip plugins:maj:bdd
 	fi
+fi
 
-	# Install SPIP
-	if [ ! -e config/connect.php ]; then
-		# Wait for mysql before install
-		# cf. https://docs.docker.com/compose/startup-order/
-		if [ ${SPIP_DB_SERVER} = "mysql" ]; then
-			until mysql -h ${SPIP_DB_HOST} -u ${SPIP_DB_LOGIN} -p${SPIP_DB_PASS}; do
-			>&2 echo "mysql is unavailable - sleeping"
-			sleep 1
-			done
-		fi
-		max_retries=20
-		try=0
-		until run_as "spip install \
-			--db-server ${SPIP_DB_SERVER} \
-			--db-host ${SPIP_DB_HOST} \
-			--db-login ${SPIP_DB_LOGIN} \
-			--db-pass ${SPIP_DB_PASS} \
-			--db-database ${SPIP_DB_NAME} \
-			--db-prefix ${SPIP_DB_PREFIX} \
-			--admin-nom ${SPIP_ADMIN_NAME} \
-			--admin-login ${SPIP_ADMIN_LOGIN} \
-			--admin-email ${SPIP_ADMIN_EMAIL} \
-			--admin-pass ${SPIP_ADMIN_PASS}" || [ "$try" -gt "$max_retries" ]; do
-				echo "retrying install..."
-				try=$((try+1))
-				sleep 10s
-		done
-		if [ "$try" -gt "$max_retries" ]; then
-			echo "installing of spip failed!"
-			exit 1
-		fi
-	fi
+# Install SPIP
+if [ ${SPIP_DB_SERVER} = "mysql" ]; then
+	wait_for_db
+fi
+if [[ ! -e config/connect.php && ${SPIP_AUTO_INSTALL} = 1 ]]; then
+	# Wait for mysql before install
+	# cf. https://docs.docker.com/compose/startup-order/
+	run_as "spip install \
+		--db-server ${SPIP_DB_SERVER} \
+		--db-host ${SPIP_DB_HOST} \
+		--db-login ${SPIP_DB_LOGIN} \
+		--db-pass ${SPIP_DB_PASS} \
+		--db-database ${SPIP_DB_NAME} \
+		--db-prefix ${SPIP_DB_PREFIX} \
+		--admin-nom ${SPIP_ADMIN_NAME} \
+		--admin-login ${SPIP_ADMIN_LOGIN} \
+		--admin-email ${SPIP_ADMIN_EMAIL} \
+		--admin-pass ${SPIP_ADMIN_PASS}" || true
 fi
 
 exec "$@"

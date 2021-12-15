@@ -6,7 +6,7 @@ RUN set -eux; \
 	apt-get update; \
 	apt-get install -y --no-install-recommends \
 		ghostscript \
-		default-mysql-client \
+		netcat \
 	; \
 	rm -rf /var/lib/apt/lists/*;
 
@@ -66,7 +66,7 @@ RUN { \
 RUN a2enmod rewrite
 
 ENV SPIP_VERSION 4.0
-ENV SPIP_PACKAGE 4.0.0
+ENV SPIP_PACKAGE 4.0.1
 
 # Install SPIP-Cli
 RUN set -ex; \
@@ -98,6 +98,7 @@ RUN set -ex; \
 VOLUME ["/var/www/html"]
 
 # SPIP
+ENV SPIP_AUTO_INSTALL 1
 ENV SPIP_DB_SERVER mysql
 ENV SPIP_DB_HOST mysql
 ENV SPIP_DB_LOGIN spip

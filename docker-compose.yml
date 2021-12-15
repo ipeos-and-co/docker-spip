@@ -1,7 +1,7 @@
 version: "3"
 services:
   db:
-    image: mariadb:10
+    image: mariadb:10.5
     restart: always
     environment:
       - MYSQL_ROOT_PASSWORD=MysqlRootPassword
@@ -15,9 +15,10 @@ services:
     links:
       - db:mysql
     environment:
+      - SPIP_AUTO_INSTALL=1
       - SPIP_DB_SERVER=mysql
       - SPIP_DB_LOGIN=spip
       - SPIP_DB_PASS=spip
       - SPIP_DB_NAME=spip
     ports:
-      - 80:80
+      - 8880:80

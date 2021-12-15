@@ -6,9 +6,10 @@ This docker use [SPIP-cli](https://contrib.spip.net/SPIP-Cli) project to manage 
 
 ## Supported Tags Respective `Dockerfile` Links
 
-- `4.0`, `4.0.0`, `latest`
-- `3.2`, `3.2.11`
-- `3.1`, `3.1.15`
+- `4.0`, `4.0.1`, `latest`
+- `3.2`, `3.2.12`
+
+**3.1 version is no longer supported**
 
 ## Installation
 
@@ -26,8 +27,7 @@ docker run --name some-spip --link some-mysql:mysql -p 8080:80 -d ipeos/spip
 
 ## Available Environment Vars
 
-**Auto-install is only available on SPIP 3.1 and 3.2 versions**
-
+- `SPIP_AUTO_INSTALL`: auto install spip database `1` or `0` (default: `1`)
 - `SPIP_DB_SERVER`: connexion method to the database `sqlite3` or `mysql` (default: `mysql`)
 - `SPIP_DB_PREFIX`: SQL table preffix (default: `spip`)
 
