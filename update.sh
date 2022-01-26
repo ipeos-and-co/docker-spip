@@ -11,7 +11,7 @@ declare -A phpVersions=(
 )
 declare -A spipPackages=(
 	[3.2]='3.2.12'
-	[4.0]='4.0.1'
+	[4.0]='4.0.2'
 )
 declare -A mysqlPackages=(
   [3.2]='mysqli'
