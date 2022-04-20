@@ -10,7 +10,7 @@ services:
       - MYSQL_PASSWORD=spip
 
   app:
-    image: ipeos/spip:4.0
+    image: ipeos/spip:4.1
     restart: always
     links:
       - db:mysql

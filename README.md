@@ -6,10 +6,11 @@ This docker use [SPIP-cli](https://contrib.spip.net/SPIP-Cli) project to manage 
 
 ## Supported Tags Respective `Dockerfile` Links
 
-- `4.0`, `4.0.6`, `latest`
-- `3.2`, `3.2.14`
+- `4.1`, `4.1.1`, `latest` (use PHP 8.1)
+- `4.0`, `4.0.6` (use PHP 7.4 - next update will use PHP 8)
+- `3.2`, `3.2.14` (use PHP 7.4)
 
-**3.1 version is no longer supported**
+**Auto install doesn't work with SPIP 4.1**
 
 ## Installation
 
