@@ -12,9 +12,9 @@ declare -A phpVersions=(
   [4.1]='8.1'
 )
 declare -A spipPackages=(
-	[3.2]='3.2.15'
-	[4.0]='4.0.7'
-	[4.1]='4.1.2'
+	[3.2]='3.2.16'
+	[4.0]='4.0.8'
+	[4.1]='4.1.5'
 )
 declare -A mysqlPackages=(
   [3.2]='mysqli'
