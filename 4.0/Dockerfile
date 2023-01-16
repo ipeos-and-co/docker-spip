@@ -66,7 +66,7 @@ RUN { \
 RUN a2enmod rewrite
 
 ENV SPIP_VERSION 4.0
-ENV SPIP_PACKAGE 4.0.8
+ENV SPIP_PACKAGE 4.0.9
 
 # Install SPIP-Cli
 RUN set -ex; \
