@@ -1,7 +1,7 @@
 version: "3"
 services:
   db:
-    image: mariadb:10.5
+    image: mariadb:10.11
     restart: always
     environment:
       - MYSQL_ROOT_PASSWORD=MysqlRootPassword
@@ -10,7 +10,7 @@ services:
       - MYSQL_PASSWORD=spip
 
   app:
-    image: ipeos/spip:4.1
+    image: ipeos/spip:4.2
     restart: always
     links:
       - db:mysql
