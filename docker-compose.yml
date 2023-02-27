@@ -20,5 +20,6 @@ services:
       - SPIP_DB_LOGIN=spip
       - SPIP_DB_PASS=spip
       - SPIP_DB_NAME=spip
+      - SPIP_SITE_ADDRESS=http://localhost:8880
     ports:
       - 8880:80
