@@ -1,4 +1,4 @@
-FROM php:8.1-apache
+FROM php:7.4-apache
 LABEL maintainer="docker@ipeos.com"
 LABEL authors="Laurent Vergerolle <docker@ipeos.com>, Michael Nival <docker@mn-home.fr>"
 
@@ -65,8 +65,8 @@ RUN { \
 # Active apache rewrite mode
 RUN a2enmod rewrite
 
-ENV SPIP_VERSION 4.2
-ENV SPIP_PACKAGE 4.2.1
+ENV SPIP_VERSION 4.0
+ENV SPIP_PACKAGE 4.0.10
 
 # Install SPIP-Cli
 RUN set -ex; \
