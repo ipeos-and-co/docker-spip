@@ -77,3 +77,4 @@ If you find this image useful here's how you can help:
 ### Contributors / Maintainers
 
 - [Michaël Nival](https://github.com/mnival)
+- [Nora Emma "Metal-Mighty" Barlow](https://github.com/Metal-Mighty)
