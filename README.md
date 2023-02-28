@@ -6,8 +6,8 @@ This docker use [SPIP-cli](https://contrib.spip.net/SPIP-Cli) project to manage 
 
 ## Supported Tags Respective `Dockerfile` Links
 
-- `4.2`, `4.2.1`, `latest` (use PHP 8.1)
-- `4.1`, `4.1.8` (use PHP 8.1)
+- `4.2`, `4.2.2`, `latest` (use PHP 8.1)
+- `4.1`, `4.1.9` (use PHP 8.1)
 
 **WARNING: if your backend is broken after upgrade you must remove image and files cache :**
 To clear cache remove `tmp/cache` and `local/cache-*` folders
@@ -50,7 +50,7 @@ docker run --name some-spip --link some-mysql:mysql -p 8080:80 -d ipeos/spip
 
 ### SPIP Configuration
 
-- `SPIP_SITE_ADDRESS`: website address (default: `http://localhost`) - EN TEST
+- `SPIP_SITE_ADDRESS`: website address (default: `http://localhost`)
 
 ### PHP Vars
 

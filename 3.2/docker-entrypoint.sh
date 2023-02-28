@@ -92,11 +92,11 @@ if [[ ! -e config/connect.php && ${SPIP_AUTO_INSTALL} = 1 ]]; then
 		--db-pass ${SPIP_DB_PASS} \
 		--db-database ${SPIP_DB_NAME} \
 		--db-prefix ${SPIP_DB_PREFIX} \
+		--adresse-site ${SPIP_SITE_ADDRESS} \
 		--admin-nom ${SPIP_ADMIN_NAME} \
 		--admin-login ${SPIP_ADMIN_LOGIN} \
 		--admin-email ${SPIP_ADMIN_EMAIL} \
-		--admin-pass ${SPIP_ADMIN_PASS} \
-		--adresse-site ${SPIP_SITE_ADDRESS}" || true
+		--admin-pass ${SPIP_ADMIN_PASS}" || true
 fi
 
 exec "$@"
