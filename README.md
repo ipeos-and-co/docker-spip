@@ -50,7 +50,7 @@ docker run --name some-spip --link some-mysql:mysql -p 8080:80 -d ipeos/spip
 
 ### SPIP Configuration
 
-- `SPIP_SITE_ADDRESS`: website address (default: `http://localhost`)
+- `SPIP_SITE_ADDRESS`: website address (default: `http://localhost`) - EN TEST
 
 ### PHP Vars
 
