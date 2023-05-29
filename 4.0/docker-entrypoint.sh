@@ -99,4 +99,14 @@ if [[ ! -e config/connect.php && ${SPIP_AUTO_INSTALL} = 1 ]]; then
 		--admin-pass ${SPIP_ADMIN_PASS}" || true
 fi
 
+# Default mes_options
+if [ ! -e config/mes_options.php ]; then
+	/bin/cat << MAINEOF > config/mes_options.php
+<?php
+if (!defined("_ECRIRE_INC_VERSION")) return;
+\$spip_header_silencieux = 1;
+?>
+MAINEOF
+fi
+
 exec "$@"

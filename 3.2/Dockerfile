@@ -63,7 +63,14 @@ RUN { \
 	} > /usr/local/etc/php/conf.d/opcache-recommended.ini
 
 # Active apache rewrite mode
-RUN a2enmod rewrite
+RUN a2enmod rewrite headers
+
+RUN { \
+	echo 'ServerSignature Off'; \
+	echo 'ServerTokens Prod'; \
+	echo 'Header unset Composed-By'; \
+	echo 'Header unset X-Powered-By'; \
+	} > /etc/apache2/conf-enabled/spip_headers.conf
 
 ENV SPIP_VERSION 3.2
 ENV SPIP_PACKAGE 3.2.19
