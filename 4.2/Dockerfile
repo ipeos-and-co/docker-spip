@@ -73,7 +73,7 @@ RUN { \
 	} > /etc/apache2/conf-enabled/spip_headers.conf
 
 ENV SPIP_VERSION 4.2
-ENV SPIP_PACKAGE 4.2.2
+ENV SPIP_PACKAGE 4.2.3
 
 # Install SPIP-Cli
 RUN set -ex; \
