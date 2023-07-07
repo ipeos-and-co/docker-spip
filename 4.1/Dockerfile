@@ -1,4 +1,4 @@
-FROM php:8.1-apache
+FROM php:7.4-apache
 LABEL maintainer="docker@ipeos.com"
 LABEL authors="Laurent Vergerolle <docker@ipeos.com>, Michael Nival <docker@mn-home.fr>"
 
@@ -6,7 +6,7 @@ RUN set -eux; \
 	apt-get update; \
 	apt-get install -y --no-install-recommends \
 		ghostscript \
-		netcat \
+		netcat-traditional \
 	; \
 	rm -rf /var/lib/apt/lists/*;
 
@@ -22,6 +22,7 @@ RUN set -ex; \
 			libjpeg-dev \
 			libmagickwand-dev \
 			libpng-dev \
+			zip \
 			libzip-dev \
 		; \
 		debMultiarch="$(dpkg-architecture --query DEB_BUILD_MULTIARCH)"; \
@@ -73,7 +74,7 @@ RUN { \
 	} > /etc/apache2/conf-enabled/spip_headers.conf
 
 ENV SPIP_VERSION 4.1
-ENV SPIP_PACKAGE 4.1.10
+ENV SPIP_PACKAGE 4.1.11
 
 # Install SPIP-Cli
 RUN set -ex; \
@@ -86,7 +87,7 @@ RUN set -ex; \
 	apt-get update; \
 	apt-get install -y --no-install-recommends $fetchDeps; \
 	\
-	git clone -b v0.6.5 https://git.spip.net/spip-contrib-outils/spip-cli.git /opt/spip-cli; \
+	git clone https://git.spip.net/spip-contrib-outils/spip-cli.git /opt/spip-cli; \
 	rm -rf /opt/spip-cli/.git; \
 	rm -rf /opt/spip-cli/.gitattributes; \
 	rm -rf /opt/spip-cli/.gitignore; \
