@@ -1,12 +1,12 @@
-FROM php:8.1-apache
+FROM php:8.1-apache-bullseye
 LABEL maintainer="docker@ipeos.com"
 LABEL authors="Laurent Vergerolle <docker@ipeos.com>, Michael Nival <docker@mn-home.fr>"
 
 RUN set -eux; \
 	apt-get update; \
 	apt-get install -y --no-install-recommends \
-		ghostscript \
-		netcat-traditional \
+	ghostscript \
+	netcat-traditional \
 	; \
 	rm -rf /var/lib/apt/lists/*;
 
@@ -14,40 +14,40 @@ RUN set -ex; \
 	\
 	savedAptMark="$(apt-mark showmanual)"; \
 	\
-		apt-get update; \
-		apt-get install -y --no-install-recommends \
-			libmcrypt-dev \
-			libfreetype6-dev \
-			libjpeg62-turbo-dev \
-			libjpeg-dev \
-			libmagickwand-dev \
-			libpng-dev \
-			zip \
-			libzip-dev \
-		; \
-		debMultiarch="$(dpkg-architecture --query DEB_BUILD_MULTIARCH)"; \
-		docker-php-ext-configure gd --with-freetype --with-jpeg; \
-		docker-php-ext-install -j$(nproc) \
-			gd \
-			exif \
-			bcmath \
-			mysqli \
-			zip \
-			opcache \
-		; \
-		\
-		pecl install imagick; \
-		docker-php-ext-enable imagick; \
+	apt-get update; \
+	apt-get install -y --no-install-recommends \
+	libmcrypt-dev \
+	libfreetype6-dev \
+	libjpeg62-turbo-dev \
+	libjpeg-dev \
+	libmagickwand-dev \
+	libpng-dev \
+	zip \
+	libzip-dev \
+	; \
+	debMultiarch="$(dpkg-architecture --query DEB_BUILD_MULTIARCH)"; \
+	docker-php-ext-configure gd --with-freetype --with-jpeg; \
+	docker-php-ext-install -j$(nproc) \
+	gd \
+	exif \
+	bcmath \
+	mysqli \
+	zip \
+	opcache \
+	; \
+	\
+	pecl install imagick; \
+	docker-php-ext-enable imagick; \
 	# reset apt-mark's "manual" list so that "purge --auto-remove" will remove all build dependencies
 	apt-mark auto '.*' > /dev/null; \
 	apt-mark manual $savedAptMark; \
 	ldd "$(php -r 'echo ini_get("extension_dir");')"/*.so \
-		| awk '/=>/ { print $3 }' \
-		| sort -u \
-		| xargs -r dpkg-query -S \
-		| cut -d: -f1 \
-		| sort -u \
-		| xargs -rt apt-mark manual; \
+	| awk '/=>/ { print $3 }' \
+	| sort -u \
+	| xargs -r dpkg-query -S \
+	| cut -d: -f1 \
+	| sort -u \
+	| xargs -rt apt-mark manual; \
 	\
 	apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false; \
 	rm -rf /var/lib/apt/lists/*
@@ -55,13 +55,13 @@ RUN set -ex; \
 # set recommended PHP.ini settings
 # see https://secure.php.net/manual/en/opcache.installation.php
 RUN { \
-		echo 'opcache.memory_consumption=128'; \
-		echo 'opcache.interned_strings_buffer=8'; \
-		echo 'opcache.max_accelerated_files=4000'; \
-		echo 'opcache.revalidate_freq=2'; \
-		echo 'opcache.fast_shutdown=1'; \
-		echo 'opcache.enable_cli=0'; \
-} > /usr/local/etc/php/conf.d/opcache-recommended.ini
+	echo 'opcache.memory_consumption=128'; \
+	echo 'opcache.interned_strings_buffer=8'; \
+	echo 'opcache.max_accelerated_files=4000'; \
+	echo 'opcache.revalidate_freq=2'; \
+	echo 'opcache.fast_shutdown=1'; \
+	echo 'opcache.enable_cli=0'; \
+	} > /usr/local/etc/php/conf.d/opcache-recommended.ini
 
 # Active apache rewrite mode
 RUN a2enmod rewrite headers
@@ -81,8 +81,8 @@ RUN set -ex; \
 	cd /opt; \
 	curl --silent --show-error https://getcomposer.org/installer | php; \
 	fetchDeps=" \
-		git \
-		unzip \
+	git \
+	unzip \
 	"; \
 	apt-get update; \
 	apt-get install -y --no-install-recommends $fetchDeps; \
