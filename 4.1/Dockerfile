@@ -1,4 +1,4 @@
-FROM php:7.4-apache-bullseye
+FROM php:8.1-apache-bullseye
 LABEL maintainer="docker@ipeos.com"
 LABEL authors="Laurent Vergerolle <docker@ipeos.com>, Michael Nival <docker@mn-home.fr>"
 
@@ -16,27 +16,40 @@ RUN set -eux; \
 	\
 	apt-get update; \
 	apt-get install -y --no-install-recommends \
-	libmcrypt-dev \
+	libxml2-dev \
+	libssl-dev \
 	libfreetype6-dev \
-	libicu-dev \
-	libjpeg-dev \
-	libmagickwand-dev \
+	libjpeg62-turbo-dev \
 	libpng-dev \
-	libwebp-dev \
-	zip \
 	libzip-dev \
+	sqlite3 \
+	libsqlite3-dev \
+	zlib1g-dev \
+	libsodium-dev \
+	netpbm \
+	imagemagick \
+	libldap2-dev \
+	libicu-dev \
+	libmagickwand-dev \
+	libwebp-dev \
 	; \
 	debMultiarch="$(dpkg-architecture --query DEB_BUILD_MULTIARCH)"; \
 	docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp; \
 	docker-php-ext-install -j$(nproc) \
 	gd \
+	xml \
 	exif \
 	bcmath \
 	mysqli \
+	pdo pdo_sqlite \
+	sodium \
 	zip \
+	phar \
 	opcache \
 	; \
 	\
+	docker-php-ext-configure ldap --with-libdir=lib/x86_64-linux-gnu/; \
+	docker-php-ext-install ldap; \
 	pecl install imagick; \
 	docker-php-ext-enable imagick; \
 	# reset apt-mark's "manual" list so that "purge --auto-remove" will remove all build dependencies
@@ -57,11 +70,15 @@ RUN set -eux; \
 # set recommended PHP.ini settings
 # see https://secure.php.net/manual/en/opcache.installation.php
 RUN { \
+	echo 'opcache.enable_cli=0'; \
 	echo 'opcache.memory_consumption=128'; \
 	echo 'opcache.interned_strings_buffer=8'; \
-	echo 'opcache.max_accelerated_files=4000'; \
-	echo 'opcache.revalidate_freq=2'; \
-	echo 'opcache.enable_cli=0'; \
+	echo 'opcache.max_accelerated_files=10000'; \
+	echo 'opcache.revalidate_freq=60'; \
+	echo 'opcache.validate_timestamps=1'; \
+	echo 'opcache.inherited_hack=1'; \
+	echo 'opcache.dups_fix=0'; \
+	echo 'opcache.validate_root=0'; \
 	} > /usr/local/etc/php/conf.d/opcache-recommended.ini
 
 RUN { \
