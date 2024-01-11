@@ -10,8 +10,8 @@ declare -A phpVersions=(
   [4.2]='8.2'
 )
 declare -A spipPackages=(
-	[4.1]='4.1.13'
-	[4.2]='4.2.7'
+	[4.1]='4.1.14'
+	[4.2]='4.2.8'
 )
 
 for spipVersion in "${spipVersions[@]}"; do
