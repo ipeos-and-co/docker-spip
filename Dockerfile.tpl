@@ -72,15 +72,14 @@ RUN set -eux; \
 # set recommended PHP.ini settings
 # see https://secure.php.net/manual/en/opcache.installation.php
 RUN { \
-	echo 'opcache.enable_cli=0'; \
-	echo 'opcache.memory_consumption=128'; \
+	echo 'opcache.enable_cli=1'; \
+	echo 'opcache.memory_consumption=256'; \
 	echo 'opcache.interned_strings_buffer=8'; \
-	echo 'opcache.max_accelerated_files=10000'; \
-	echo 'opcache.revalidate_freq=60'; \
+	echo 'opcache.max_accelerated_files=20000'; \
+	echo 'opcache.revalidate_freq=2'; \
 	echo 'opcache.validate_timestamps=1'; \
-	echo 'opcache.inherited_hack=1'; \
 	echo 'opcache.dups_fix=0'; \
-	echo 'opcache.validate_root=0'; \
+	echo 'opcache.validate_root=1'; \
 	} > /usr/local/etc/php/conf.d/opcache-recommended.ini
 
 RUN { \
