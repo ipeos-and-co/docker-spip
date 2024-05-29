@@ -4,14 +4,17 @@ set -euo pipefail
 declare -A spipVersions=(
   [0]='4.1'
   [1]='4.2'
+  [2]='4.3'
 )
 declare -A phpVersions=(
   [4.1]='8.1'
   [4.2]='8.2'
+  [4.3]='8.3'
 )
 declare -A spipPackages=(
-	[4.1]='4.1.15'
-	[4.2]='4.2.12'
+	[4.1]='4.1.16'
+	[4.2]='4.2.13'
+	[4.3]='4.3.0-alpha2'
 )
 
 for spipVersion in "${spipVersions[@]}"; do

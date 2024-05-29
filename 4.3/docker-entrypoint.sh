@@ -53,8 +53,7 @@ echo 'date.timezone=${PHP_TIMEZONE}'; \
 if version_greater "$image_version" "$installed_version"; then
 	echo >&2 "SPIP upgrade in $PWD - copying now..."
 	if [ "$(ls -A)" ]; then
-		echo >&2 "WARNING: $PWD is not empty - press Ctrl+C now if this is an error!"
-		( set -x; ls -A; sleep 10 )
+		echo >&2 "WARNING: $PWD is not empty"
 	fi
 	tar cf - --one-file-system -C /usr/src/spip . | tar xf -
 	echo >&2 "Complete! SPIP has been successfully copied to $PWD"
@@ -104,7 +103,7 @@ if [ ! -e config/mes_options.php ]; then
 	/bin/cat << MAINEOF > config/mes_options.php
 <?php
 if (!defined("_ECRIRE_INC_VERSION")) return;
-\$spip_header_silencieux = 1;
+\$GLOBALS['spip_header_silencieux'] = 1;
 ?>
 MAINEOF
 fi
