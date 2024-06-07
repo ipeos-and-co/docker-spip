@@ -6,9 +6,9 @@ This docker use [SPIP-cli](https://contrib.spip.net/SPIP-Cli) project to manage 
 
 ## Supported Tags Respective `Dockerfile` Links
 
-- `4.3`, `4.3.0-alpha2` (use PHP 8.3)
-- `4.2`, `4.2.13`, `latest` (use PHP 8.2)
-- `4.1`, `4.1.16` (use PHP 8.1)
+- `4.3`, `4.3.0-beta` (use PHP 8.3)
+- `4.2`, `4.2.14`, `latest` (use PHP 8.2)
+- `4.1`, `4.1.17` (use PHP 8.1)
 
 **WARNING: if your backend is broken after upgrade you must remove image and files cache :**
 To clear cache remove `tmp/cache` and `local/cache-*` folders
