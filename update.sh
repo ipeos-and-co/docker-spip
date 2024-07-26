@@ -6,15 +6,17 @@ declare -A spipVersions=(
   [1]='4.2'
   [2]='4.3'
 )
+# Blocker en 8.2 max a cause du bug imagick et php 8.3 docker
+# cf.https://orkhan.dev/2024/02/07/using-imagick-with-php-83-on-docker/
 declare -A phpVersions=(
   [4.1]='8.1'
   [4.2]='8.2'
-  [4.3]='8.3'
+  [4.3]='8.2'
 )
 declare -A spipPackages=(
 	[4.1]='4.1.17'
-	[4.2]='4.2.14'
-	[4.3]='4.3.0-beta'
+	[4.2]='4.2.15'
+	[4.3]='4.3.0'
 )
 
 for spipVersion in "${spipVersions[@]}"; do

@@ -1,4 +1,4 @@
-FROM php:8.2-apache-bullseye
+FROM php:8.2-apache-bookworm
 LABEL maintainer="docker@ipeos.com"
 LABEL authors="Laurent Vergerolle <docker@ipeos.com>, Michael Nival <docker@mn-home.fr>"
 
@@ -56,7 +56,7 @@ RUN set -eux; \
 	docker-php-ext-enable apcu; \
 	# reset apt-mark's "manual" list so that "purge --auto-remove" will remove all build dependencies
 	apt-mark auto '.*' > /dev/null; \
-	apt-mark manual $savedAptMark; \
+	apt-mark manual netpbm imagemagick $savedAptMark; \
 	ldd "$(php -r 'echo ini_get("extension_dir");')"/*.so \
 	| awk '/=>/ { print $3 }' \
 	| sort -u \
@@ -119,7 +119,7 @@ RUN set -eux; \
 	find /etc/apache2 -type f -name '*.conf' -exec sed -ri 's/([[:space:]]*LogFormat[[:space:]]+"[^"]*)%h([^"]*")/\1%a\2/g' '{}' +
 
 ENV SPIP_VERSION 4.2
-ENV SPIP_PACKAGE 4.2.14
+ENV SPIP_PACKAGE 4.2.15
 
 # Install SPIP-Cli
 RUN set -eux; \

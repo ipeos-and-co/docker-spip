@@ -1,4 +1,4 @@
-FROM php:%%PHP_VERSION%%-apache-bullseye
+FROM php:%%PHP_VERSION%%-apache-bookworm
 LABEL maintainer="docker@ipeos.com"
 LABEL authors="Laurent Vergerolle <docker@ipeos.com>, Michael Nival <docker@mn-home.fr>"
 
@@ -56,7 +56,7 @@ RUN set -eux; \
 	docker-php-ext-enable apcu; \
 	# reset apt-mark's "manual" list so that "purge --auto-remove" will remove all build dependencies
 	apt-mark auto '.*' > /dev/null; \
-	apt-mark manual $savedAptMark; \
+	apt-mark manual netpbm imagemagick $savedAptMark; \
 	ldd "$(php -r 'echo ini_get("extension_dir");')"/*.so \
 	| awk '/=>/ { print $3 }' \
 	| sort -u \
