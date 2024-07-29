@@ -1,4 +1,4 @@
-FROM php:%%PHP_VERSION%%-apache-bookworm
+FROM php:%%PHP_VERSION%%-apache-bullseye
 LABEL maintainer="docker@ipeos.com"
 LABEL authors="Laurent Vergerolle <docker@ipeos.com>, Michael Nival <docker@mn-home.fr>"
 
@@ -48,6 +48,8 @@ RUN set -eux; \
 	opcache \
 	; \
 	\
+	docker-php-ext-configure zip; \
+	docker-php-ext-install zip; \
 	docker-php-ext-configure ldap --with-libdir=lib/x86_64-linux-gnu/; \
 	docker-php-ext-install ldap; \
 	pecl install imagick; \
