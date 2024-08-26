@@ -1,4 +1,4 @@
-FROM php:%%PHP_VERSION%%-apache-bullseye
+FROM php:%%PHP_VERSION%%-apache-bookworm
 LABEL maintainer="docker@ipeos.com"
 LABEL authors="Laurent Vergerolle <docker@ipeos.com>, Michael Nival <docker@mn-home.fr>"
 
