@@ -1,4 +1,4 @@
-FROM php:8.2-apache-bookworm
+FROM php:8.2-apache-bullseye
 LABEL maintainer="docker@ipeos.com"
 LABEL authors="Laurent Vergerolle <docker@ipeos.com>, Michael Nival <docker@mn-home.fr>"
 
@@ -31,9 +31,7 @@ RUN set -eux; \
 	libldap2-dev \
 	libicu-dev \
 	libmagickwand-dev \
-	libwebp-dev \
-	; \
-	debMultiarch="$(dpkg-architecture --query DEB_BUILD_MULTIARCH)"; \
+	libwebp-dev; \
 	docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp; \
 	docker-php-ext-install -j$(nproc) \
 	gd \
@@ -41,24 +39,21 @@ RUN set -eux; \
 	exif \
 	bcmath \
 	mysqli \
-	pdo pdo_sqlite \
+	pdo \
+	pdo_sqlite \
 	sodium \
 	zip \
 	phar \
-	opcache \
-	; \
-	\
-	docker-php-ext-configure zip; \
-	docker-php-ext-install zip; \
-	docker-php-ext-configure ldap --with-libdir=lib/x86_64-linux-gnu/; \
+	opcache; \
+	docker-php-ext-configure ldap --with-libdir=lib/x86_64-linux-gnu/ && \
 	docker-php-ext-install ldap; \
-	pecl install imagick; \
+	pecl install imagick && \
 	docker-php-ext-enable imagick; \
-	pecl install apcu; \
+	pecl install apcu && \
 	docker-php-ext-enable apcu; \
 	# reset apt-mark's "manual" list so that "purge --auto-remove" will remove all build dependencies
-	apt-mark auto '.*' > /dev/null; \
-	apt-mark manual netpbm imagemagick $savedAptMark; \
+	apt-mark auto '.*' > /dev/null && \
+	apt-mark manual netpbm imagemagick $savedAptMark && \
 	ldd "$(php -r 'echo ini_get("extension_dir");')"/*.so \
 	| awk '/=>/ { print $3 }' \
 	| sort -u \
@@ -67,8 +62,8 @@ RUN set -eux; \
 	| sort -u \
 	| xargs -rt apt-mark manual; \
 	\
-	apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false; \
-	rm -rf /tmp/*; \
+	apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false && \
+	rm -rf /tmp/* && \
 	rm -rf /var/lib/apt/lists/*
 
 # set recommended PHP.ini settings
@@ -183,3 +178,7 @@ RUN chmod +x /docker-entrypoint.sh
 ENTRYPOINT ["/docker-entrypoint.sh"]
 
 CMD ["apache2-foreground"]
+
+# Healthcheck
+HEALTHCHECK --interval=30s --timeout=30s --start-period=20s --retries=7 \
+	CMD curl -f http://localhost/ecrire/ || exit 1
