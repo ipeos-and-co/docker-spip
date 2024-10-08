@@ -1,4 +1,4 @@
-FROM php:%%PHP_VERSION%%-apache-bullseye
+FROM php:%%PHP_VERSION%%-apache-%%OS_VERSION%%
 LABEL maintainer="docker@ipeos.com"
 LABEL authors="Laurent Vergerolle <docker@ipeos.com>, Michael Nival <docker@mn-home.fr>"
 
@@ -18,7 +18,9 @@ RUN set -eux; \
 	apt-get install -y --no-install-recommends \
 	libxml2-dev \
 	libssl-dev \
+	libavif-dev \
 	libfreetype6-dev \
+	libjpeg-dev \
 	libjpeg62-turbo-dev \
 	libpng-dev \
 	libzip-dev \
@@ -32,7 +34,9 @@ RUN set -eux; \
 	libicu-dev \
 	libmagickwand-dev \
 	libwebp-dev; \
-	docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp; \
+	\
+	docker-php-ext-configure gd --with-avif --with-freetype --with-jpeg --with-webp; \
+	\
 	docker-php-ext-install -j$(nproc) \
 	gd \
 	xml \
@@ -45,38 +49,59 @@ RUN set -eux; \
 	zip \
 	phar \
 	opcache; \
+	\
 	docker-php-ext-configure ldap --with-libdir=lib/x86_64-linux-gnu/ && \
 	docker-php-ext-install ldap; \
-	pecl install imagick && \
-	docker-php-ext-enable imagick; \
+	\
+	curl -fL -o imagick.tgz 'https://pecl.php.net/get/imagick-3.7.0.tgz'; \
+	echo '5a364354109029d224bcbb2e82e15b248be9b641227f45e63425c06531792d3e *imagick.tgz' | sha256sum -c -; \
+	tar --extract --directory /tmp --file imagick.tgz imagick-3.7.0; \
+	grep '^//#endif$' /tmp/imagick-3.7.0/Imagick.stub.php; \
+	test "$(grep -c '^//#endif$' /tmp/imagick-3.7.0/Imagick.stub.php)" = '1'; \
+	sed -i -e 's!^//#endif$!#endif!' /tmp/imagick-3.7.0/Imagick.stub.php; \
+	grep '^//#endif$' /tmp/imagick-3.7.0/Imagick.stub.php && exit 1 || :; \
+	docker-php-ext-install /tmp/imagick-3.7.0; \
+	rm -rf imagick.tgz /tmp/imagick-3.7.0; \
+	\
 	pecl install apcu && \
 	docker-php-ext-enable apcu; \
+	out="$(php -r 'exit(0);')"; \
+	[ -z "$out" ]; \
+	err="$(php -r 'exit(0);' 3>&1 1>&2 2>&3)"; \
+	[ -z "$err" ]; \
+	\
+	extDir="$(php -r 'echo ini_get("extension_dir");')"; \
+	[ -d "$extDir" ]; \
 	# reset apt-mark's "manual" list so that "purge --auto-remove" will remove all build dependencies
-	apt-mark auto '.*' > /dev/null && \
-	apt-mark manual netpbm imagemagick $savedAptMark && \
-	ldd "$(php -r 'echo ini_get("extension_dir");')"/*.so \
-	| awk '/=>/ { print $3 }' \
+	apt-mark auto '.*' > /dev/null; \
+	apt-mark manual netpbm imagemagick $savedAptMark; \
+	ldd "$extDir"/*.so \
+	| awk '/=>/ { so = $(NF-1); if (index(so, "/usr/local/") == 1) { next }; gsub("^/(usr/)?", "", so); printf "*%s\n", so }' \
 	| sort -u \
-	| xargs -r dpkg-query -S \
+	| xargs -r dpkg-query --search \
 	| cut -d: -f1 \
 	| sort -u \
 	| xargs -rt apt-mark manual; \
 	\
-	apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false && \
-	rm -rf /tmp/* && \
-	rm -rf /var/lib/apt/lists/*
+	apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false; \
+	rm -rf /var/lib/apt/lists/*; \
+	\
+	! { ldd "$extDir"/*.so | grep 'not found'; }; \
+	# check for output like "PHP Warning:  PHP Startup: Unable to load dynamic library 'foo' (tried: ...)
+	err="$(php --version 3>&1 1>&2 2>&3)"; \
+	[ -z "$err" ]
 
 # set recommended PHP.ini settings
 # see https://secure.php.net/manual/en/opcache.installation.php
 RUN { \
 	echo 'opcache.enable_cli=1'; \
-	echo 'opcache.memory_consumption=256'; \
+	echo 'opcache.memory_consumption=128'; \
 	echo 'opcache.interned_strings_buffer=8'; \
-	echo 'opcache.max_accelerated_files=20000'; \
+	echo 'opcache.max_accelerated_files=10000'; \
 	echo 'opcache.revalidate_freq=2'; \
 	echo 'opcache.validate_timestamps=1'; \
 	echo 'opcache.dups_fix=0'; \
-	echo 'opcache.validate_root=1'; \
+	echo 'opcache.fast_shutdown=1'; \
 	} > /usr/local/etc/php/conf.d/opcache-recommended.ini
 
 RUN { \
@@ -180,5 +205,5 @@ ENTRYPOINT ["/docker-entrypoint.sh"]
 CMD ["apache2-foreground"]
 
 # Healthcheck
-HEALTHCHECK --interval=30s --timeout=30s --start-period=20s --retries=7 \
+HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=7 \
 	CMD curl -f http://localhost/ecrire/ || exit 1
