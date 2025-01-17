@@ -19,9 +19,9 @@ declare -A osVersions=(
   [4.3]='bookworm'
 )
 declare -A spipPackages=(
-	[4.1]='4.1.18'
-	[4.2]='4.2.16'
-	[4.3]='4.3.5'
+	[4.1]='4.1.20'
+	[4.2]='4.2.17'
+	[4.3]='4.3.6'
 )
 
 for spipVersion in "${spipVersions[@]}"; do
