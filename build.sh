@@ -10,7 +10,7 @@ if [[ -z "$VERSION" ]]; then
 fi
 
 if [ $VERSION = "latest" ]; then
-  sudo docker build --progress=plain -t $TARGET 4.3
+  sudo docker build --progress=plain -t $TARGET 4.4
   exit 1;
 fi
 

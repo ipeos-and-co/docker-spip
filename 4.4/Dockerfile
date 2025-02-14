@@ -141,7 +141,7 @@ RUN set -eux; \
 	find /etc/apache2 -type f -name '*.conf' -exec sed -ri 's/([[:space:]]*LogFormat[[:space:]]+"[^"]*)%h([^"]*")/\1%a\2/g' '{}' +
 
 ENV SPIP_VERSION 4.4
-ENV SPIP_PACKAGE 4.4.0-beta4
+ENV SPIP_PACKAGE 4.4.0
 
 # Install SPIP-Cli
 RUN set -eux; \
@@ -162,7 +162,7 @@ RUN set -eux; \
 	ln -s /opt/spip-cli/bin/spipmu /usr/local/bin/spipmu; \
 	cd /opt/spip-cli && /opt/composer.phar install; \
 	\
-	curl -o spip.zip -fSL "files.spip.net/spip/dev/spip-v${SPIP_PACKAGE}.zip"; \
+	curl -o spip.zip -fSL "files.spip.net/spip/archives/spip-v${SPIP_PACKAGE}.zip"; \
 	unzip spip.zip -d /usr/src/spip; \
 	rm spip.zip; \
 	chown -R www-data:www-data /usr/src/spip; \

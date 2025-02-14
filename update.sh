@@ -25,7 +25,7 @@ declare -A spipPackages=(
 	[4.1]='4.1.20'
 	[4.2]='4.2.17'
 	[4.3]='4.3.6'
-	[4.4]='4.4.0-beta4'
+	[4.4]='4.4.0'
 )
 
 for spipVersion in "${spipVersions[@]}"; do
