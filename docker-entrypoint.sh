@@ -70,6 +70,10 @@ if version_greater "$image_version" "$installed_version"; then
 		chown www-data:www-data .htaccess
 	fi
 
+	if [ ${SPIP_DB_SERVER} = "mysql" ]; then
+		wait_for_db
+	fi
+	
 	# Upgrade SPIP
 	if [ -f config/connect.php ]; then
 		spip core:maj:bdd
