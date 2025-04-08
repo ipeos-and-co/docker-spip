@@ -79,6 +79,7 @@ If you find this image useful here's how you can help:
 
 - [Laurent Vergerolle](https://github.com/psychoz971/)
 - [Olivier Watté](https://github.com/owatte/)
+- [Morgan Lejuez](https://github.com/Kanaima/)
 
 ### Contributors / Maintainers
 
