@@ -32,7 +32,7 @@ docker run --name some-spip --link some-mysql:mysql -p 8080:80 -d ipeos/spip
 
 - `SPIP_AUTO_INSTALL`: auto install spip database `1` or `0` (default: `1`)
 - `SPIP_DB_SERVER`: connexion method to the database `sqlite3` or `mysql` (default: `mysql`)
-- `SPIP_DB_PREFIX`: SQL table preffix (default: `spip`)
+- `SPIP_DB_PREFIX`: SQL table prefix (default: `spip`)
 
 ### For MySQL Database Only
 

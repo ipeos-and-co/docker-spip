@@ -7,7 +7,7 @@ declare -A spipVersions=(
   [2]='4.3'
   [3]='4.4'
 )
-# Blocker en 8.2 max a cause du bug imagick et php 8.3 docker
+# Bloquer en 8.2 max a cause du bug imagick et php 8.3 docker
 # cf.https://orkhan.dev/2024/02/07/using-imagick-with-php-83-on-docker/
 declare -A phpVersions=(
   [4.1]='8.1'
