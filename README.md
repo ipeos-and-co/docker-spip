@@ -6,7 +6,7 @@ This docker use [SPIP-cli](https://contrib.spip.net/SPIP-Cli) project to manage 
 
 ## Supported Tags Respective `Dockerfile` Links
 
-- `4.4`, `4.4.2`, `latest` (use PHP 8.3)
+- `4.4`, `4.4.3`, `latest` (use PHP 8.3)
 - `4.3`, `4.3.8`, (use PHP 8.3)
 - `4.2`, `4.2.17` (use PHP 8.3)
 - `4.1`, `4.1.20` (use PHP 8.1)
@@ -79,6 +79,7 @@ If you find this image useful here's how you can help:
 
 - [Laurent Vergerolle](https://github.com/psychoz971/)
 - [Olivier Watté](https://github.com/owatte/)
+- [Morgan Lejuez](https://github.com/Kanaima/)
 
 ### Contributors / Maintainers
 
