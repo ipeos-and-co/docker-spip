@@ -18,14 +18,14 @@ declare -A phpVersions=(
 declare -A osVersions=(
   [4.1]='bullseye'
   [4.2]='bookworm'
-  [4.3]='bookworm'
-  [4.4]='bookworm'
+  [4.3]='trixie'
+  [4.4]='trixie'
 )
 declare -A spipPackages=(
 	[4.1]='4.1.20'
 	[4.2]='4.2.17'
-	[4.3]='4.3.8'
-	[4.4]='4.4.4'
+	[4.3]='4.3.9'
+	[4.4]='4.4.5'
 )
 
 for spipVersion in "${spipVersions[@]}"; do
