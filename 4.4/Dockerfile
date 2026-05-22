@@ -141,7 +141,7 @@ RUN set -eux; \
 	find /etc/apache2 -type f -name '*.conf' -exec sed -ri 's/([[:space:]]*LogFormat[[:space:]]+"[^"]*)%h([^"]*")/\1%a\2/g' '{}' +
 
 ENV SPIP_VERSION=4.4
-ENV SPIP_PACKAGE=4.4.14
+ENV SPIP_PACKAGE=4.4.15
 
 # Install SPIP-Cli
 RUN set -eux; \
