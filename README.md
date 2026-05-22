@@ -6,13 +6,24 @@ This docker use [SPIP-cli](https://contrib.spip.net/SPIP-Cli) project to manage 
 
 ## Supported Tags Respective `Dockerfile` Links
 
-- `4.4`, `4.4.15`, `latest` (use PHP 8.3)
-- `4.3`, `4.3.9`, (use PHP 8.3)
-- `4.2`, `4.2.17` (use PHP 8.3)
-- `4.1`, `4.1.20` (use PHP 8.1)
+- `4.4`, `4.4.15`, `latest` (use PHP 8.4)
 
 **WARNING: if your backend is broken after upgrade you must remove image and files cache :**
 To clear cache remove `tmp/cache` and `local/cache-*` folders
+
+## End of Life — Dropped Image Support
+
+The following images are no longer maintained and will not receive any further updates:
+
+| Image | Last version | Reason |
+|-------|-------------|--------|
+| `4.3`, `4.3.9` | PHP 8.3 | SPIP 4.3 no longer receives security updates |
+| `4.2`, `4.2.17` | PHP 8.3 | SPIP 4.2 no longer receives security updates |
+| `4.1`, `4.1.20` | PHP 8.1 | SPIP 4.1 no longer receives security updates |
+
+SPIP only maintains the latest version of each major branch. Versions 4.1, 4.2 and 4.3 have reached end-of-life and may contain unpatched security vulnerabilities. Please upgrade to SPIP 4.4.
+
+See the [official SPIP maintenance policy](https://www.spip.net/fr_article6500.html) for details.
 
 ## Installation
 
