@@ -11,7 +11,7 @@ declare -A osVersions=(
   [4.4]='trixie'
 )
 declare -A spipPackages=(
-	[4.4]='4.4.15'
+	[4.4]='4.4.16'
 )
 
 for spipVersion in "${spipVersions[@]}"; do
