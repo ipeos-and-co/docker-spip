@@ -1,6 +1,11 @@
 FROM php:8.4-apache-trixie
 LABEL maintainer="docker@ipeos.com"
 LABEL authors="Laurent Vergerolle <docker@ipeos.com>, Michael Nival <docker@mn-home.fr>"
+LABEL org.opencontainers.image.title="SPIP"
+LABEL org.opencontainers.image.description="SPIP 4.4 CMS on PHP 8.4 / Apache"
+LABEL org.opencontainers.image.source="https://github.com/ipeos-and-co/docker-spip"
+LABEL org.opencontainers.image.licenses="GPL-3.0-only"
+LABEL org.opencontainers.image.version="4.4.19"
 
 RUN set -eux; \
 	apt-get update; \
@@ -52,10 +57,16 @@ RUN set -eux; \
 	docker-php-ext-configure ldap --with-libdir=lib/x86_64-linux-gnu/ && \
 	docker-php-ext-install ldap; \
 	\
-	pecl install imagick && \
+	curl -fL -o imagick.tgz 'https://pecl.php.net/get/imagick-3.8.1.tgz'; \
+	echo '3a3587c0a524c17d0dad9673a160b90cd776e836838474e173b549ed864352ee *imagick.tgz' | sha256sum -c -; \
+	pecl install ./imagick.tgz && \
+	rm imagick.tgz && \
 	docker-php-ext-enable imagick; \
 	\
-	pecl install apcu && \
+	curl -fL -o apcu.tgz 'https://pecl.php.net/get/apcu-5.1.28.tgz'; \
+	echo 'ca9c1820810a168786f8048a4c3f8c9e3fd941407ad1553259fb2e30b5f057bf *apcu.tgz' | sha256sum -c -; \
+	pecl install ./apcu.tgz && \
+	rm apcu.tgz && \
 	docker-php-ext-enable apcu; \
 	out="$(php -r 'exit(0);')"; \
 	[ -z "$out" ]; \
@@ -133,12 +144,16 @@ RUN set -eux; \
 	find /etc/apache2 -type f -name '*.conf' -exec sed -ri 's/([[:space:]]*LogFormat[[:space:]]+"[^"]*)%h([^"]*")/\1%a\2/g' '{}' +
 
 ENV SPIP_VERSION=4.4
-ENV SPIP_PACKAGE=4.4.18
+ENV SPIP_PACKAGE=4.4.19
 
 # Install SPIP-Cli
 RUN set -eux; \
 	cd /opt; \
-	curl --silent --show-error https://getcomposer.org/installer | php; \
+	EXPECTED_CHECKSUM="$(curl -fsSL https://composer.github.io/installer.sig)"; \
+	curl -fsSL -o composer-setup.php https://getcomposer.org/installer; \
+	echo "$EXPECTED_CHECKSUM *composer-setup.php" | sha384sum -c -; \
+	php composer-setup.php --install-dir=/opt; \
+	rm composer-setup.php; \
 	fetchDeps=" \
 	git \
 	unzip \
@@ -146,16 +161,18 @@ RUN set -eux; \
 	apt-get update; \
 	apt-get install -y --no-install-recommends $fetchDeps; \
 	\
-	git clone https://git.spip.net/spip-contrib-outils/spip-cli.git /opt/spip-cli; \
+	git clone --depth 1 --branch 2.0.1 https://git.spip.net/spip-contrib-outils/spip-cli.git /opt/spip-cli; \
 	rm -rf /opt/spip-cli/.git; \
 	rm -rf /opt/spip-cli/.gitattributes; \
 	rm -rf /opt/spip-cli/.gitignore; \
 	ln -s /opt/spip-cli/bin/spip /usr/local/bin/spip; \
 	ln -s /opt/spip-cli/bin/spipmu /usr/local/bin/spipmu; \
 	cd /opt/spip-cli && /opt/composer.phar install; \
+	rm /opt/composer.phar; \
 	\
-	curl -o spip.zip -fSL "files.spip.net/spip/archives/spip-v${SPIP_PACKAGE}.zip"; \
-	unzip spip.zip -d /usr/src/spip; \
+	curl -o spip.zip -fSL "https://files.spip.net/spip/archives/spip-v${SPIP_PACKAGE}.zip"; \
+	echo "20bd1a33954b9886e72cb3e9f1648eb8811a82c39caee26cc627b20a512ed547 *spip.zip" | sha256sum -c -; \
+	unzip -q spip.zip -d /usr/src/spip; \
 	rm spip.zip; \
 	chown -R www-data:www-data /usr/src/spip; \
 	\
@@ -169,6 +186,7 @@ VOLUME /var/www/html
 ENV SPIP_AUTO_INSTALL=1
 ENV SPIP_DB_SERVER=mysql
 ENV SPIP_DB_HOST=mysql
+ENV SPIP_DB_PORT=3306
 ENV SPIP_DB_LOGIN=spip
 ENV SPIP_DB_PASS=spip
 ENV SPIP_DB_NAME=spip
@@ -188,14 +206,12 @@ ENV PHP_TIMEZONE=America/Guadeloupe
 
 EXPOSE 80
 
-COPY ./docker-entrypoint.sh /
-
-RUN chmod +x /docker-entrypoint.sh
+COPY --chmod=0755 ./docker-entrypoint.sh /
 
 ENTRYPOINT ["/docker-entrypoint.sh"]
 
 CMD ["apache2-foreground"]
 
 # Healthcheck
-HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=7 \
-	CMD curl -f http://localhost/ecrire/ || exit 1
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=7 \
+	CMD curl -fsS http://localhost/ || exit 1

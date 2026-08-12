@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e
+set -euo pipefail
 
 run_as() {
 	if [ "$(id -u)" = 0 ]; then
@@ -15,8 +15,14 @@ version_greater() {
 }
 
 wait_for_db() {
-	until nc -z -v -w60 "${SPIP_DB_HOST}" "3306"; do
-		echo "Waiting for database ready..."
+	local tries=0
+	until nc -z -w5 "${SPIP_DB_HOST}" "${SPIP_DB_PORT:-3306}"; do
+		tries=$((tries + 1))
+		if [ "$tries" -ge 30 ]; then
+			echo >&2 "ERROR: database ${SPIP_DB_HOST}:${SPIP_DB_PORT:-3306} still unreachable after ${tries} attempts, aborting."
+			exit 1
+		fi
+		echo "Waiting for database ready (${tries}/30)..."
 		sleep 5
 	done
 }
@@ -29,8 +35,7 @@ if [ -f "/var/www/html/ecrire/inc_version.php" ]; then
 	image_version=$(grep -i /usr/src/spip/ecrire/inc_version.php  -e '\$spip_version_branche =' | cut -d '=' -f 2 | cut -d ';' -f 1 | cut -d "'" -f 2 | cut -d '"' -f 2)
 fi
 
-echo $installed_version
-echo $image_version
+echo "SPIP version in volume: ${installed_version} - SPIP version shipped in image: ${image_version}"
 
 if version_greater "$installed_version" "$image_version"; then
 	echo "Can't start SPIP because the version of the data ($installed_version) is higher than the docker image version ($image_version) and downgrading is not supported. Are you sure you have pulled the newest image version?"
@@ -39,9 +44,9 @@ fi
 
 # Reconfigure php.ini
 # set PHP.ini settings for SPIP
+# NB: error logging is configured at build time (error-logging.ini -> /dev/stderr),
+# do not override error_log here or PHP errors disappear from `docker logs`
 ( \
-echo 'display_errors=Off'; \
-echo 'error_log=/var/log/apache2/php.log'; \
 echo "max_execution_time=${PHP_MAX_EXECUTION_TIME}"; \
 echo "memory_limit=${PHP_MEMORY_LIMIT}"; \
 echo "post_max_size=${PHP_POST_MAX_SIZE}"; \
@@ -70,25 +75,31 @@ if version_greater "$image_version" "$installed_version"; then
 		chown www-data:www-data .htaccess
 	fi
 
-	if [ ${SPIP_DB_SERVER} = "mysql" ]; then
+	if [ "${SPIP_DB_SERVER}" = "mysql" ]; then
 		wait_for_db
 	fi
-	
+
 	# Upgrade SPIP
 	if [ -f config/connect.php ]; then
-		spip core:maj:bdd
-		spip plugins:maj:bdd
+		run_as "spip core:maj:bdd"
+		run_as "spip plugins:maj:bdd"
 	fi
 fi
 
 # Install SPIP
-if [ ${SPIP_DB_SERVER} = "mysql" ]; then
+if [ "${SPIP_DB_SERVER}" = "mysql" ]; then
 	wait_for_db
 fi
-if [[ ! -e config/connect.php && ${SPIP_AUTO_INSTALL} = 1 ]]; then
+if [[ ! -e config/connect.php && "${SPIP_AUTO_INSTALL}" = 1 ]]; then
+	if [ "${SPIP_ADMIN_PASS}" = "adminadmin" ]; then
+		echo >&2 "**********************************************************************"
+		echo >&2 "WARNING: SPIP_ADMIN_PASS is using the default value 'adminadmin'."
+		echo >&2 "Set a strong password via SPIP_ADMIN_PASS before exposing this site."
+		echo >&2 "**********************************************************************"
+	fi
 	# Wait for mysql before install
 	# cf. https://docs.docker.com/compose/startup-order/
-	run_as "spip install \
+	if ! run_as "spip install \
 		--db-server ${SPIP_DB_SERVER} \
 		--db-host ${SPIP_DB_HOST} \
 		--db-login ${SPIP_DB_LOGIN} \
@@ -99,7 +110,9 @@ if [[ ! -e config/connect.php && ${SPIP_AUTO_INSTALL} = 1 ]]; then
 		--admin-nom ${SPIP_ADMIN_NAME} \
 		--admin-login ${SPIP_ADMIN_LOGIN} \
 		--admin-email ${SPIP_ADMIN_EMAIL} \
-		--admin-pass ${SPIP_ADMIN_PASS}" || true
+		--admin-pass ${SPIP_ADMIN_PASS}"; then
+		echo >&2 "WARNING: SPIP auto-install failed - complete the installation via the web interface (/ecrire/)"
+	fi
 fi
 
 # Default mes_options
@@ -110,6 +123,7 @@ if (!defined("_ECRIRE_INC_VERSION")) return;
 \$GLOBALS['spip_header_silencieux'] = 1;
 ?>
 MAINEOF
+	chown www-data:www-data config/mes_options.php
 fi
 
 exec "$@"

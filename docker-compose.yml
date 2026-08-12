@@ -3,22 +3,38 @@ services:
     image: mariadb:11.8
     restart: always
     environment:
-      - MYSQL_ROOT_PASSWORD=MysqlRootPassword
+      - MYSQL_ROOT_PASSWORD=ChangeMeRootPassword!
       - MYSQL_DATABASE=spip
       - MYSQL_USER=spip
-      - MYSQL_PASSWORD=spip
+      - MYSQL_PASSWORD=ChangeMeSpipDbPassword!
+    volumes:
+      - db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
 
   app:
     image: ipeos/spip:4.4
     restart: always
-    links:
-      - db:mysql
+    depends_on:
+      db:
+        condition: service_healthy
     environment:
       - SPIP_AUTO_INSTALL=1
       - SPIP_DB_SERVER=mysql
+      - SPIP_DB_HOST=db
       - SPIP_DB_LOGIN=spip
-      - SPIP_DB_PASS=spip
+      - SPIP_DB_PASS=ChangeMeSpipDbPassword!
       - SPIP_DB_NAME=spip
+      - SPIP_ADMIN_PASS=ChangeMeAdminPassword!
       - SPIP_SITE_ADDRESS=http://localhost:8880
+    volumes:
+      - spip_html:/var/www/html
     ports:
       - 8880:80
+
+volumes:
+  db_data:
+  spip_html:
