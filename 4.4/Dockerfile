@@ -5,7 +5,7 @@ LABEL org.opencontainers.image.title="SPIP"
 LABEL org.opencontainers.image.description="SPIP 4.4 CMS on PHP 8.4 / Apache"
 LABEL org.opencontainers.image.source="https://github.com/ipeos-and-co/docker-spip"
 LABEL org.opencontainers.image.licenses="GPL-3.0-only"
-LABEL org.opencontainers.image.version="4.4.20"
+LABEL org.opencontainers.image.version="4.4.21"
 
 RUN set -eux; \
 	apt-get update; \
@@ -144,7 +144,7 @@ RUN set -eux; \
 	find /etc/apache2 -type f -name '*.conf' -exec sed -ri 's/([[:space:]]*LogFormat[[:space:]]+"[^"]*)%h([^"]*")/\1%a\2/g' '{}' +
 
 ENV SPIP_VERSION=4.4
-ENV SPIP_PACKAGE=4.4.20
+ENV SPIP_PACKAGE=4.4.21
 
 # Install SPIP-Cli
 RUN set -eux; \
@@ -171,7 +171,7 @@ RUN set -eux; \
 	rm /opt/composer.phar; \
 	\
 	curl -o spip.zip -fSL "https://files.spip.net/spip/archives/spip-v${SPIP_PACKAGE}.zip"; \
-	echo "4fea8035a25ed5e254210a0e2819739fe5f539d0869511792d0509a2c0ef03e6 *spip.zip" | sha256sum -c -; \
+	echo "0a8f770923c38e72d95c3db62673a946f090a557dbece5b5bbb6a1baa214cd21 *spip.zip" | sha256sum -c -; \
 	unzip -q spip.zip -d /usr/src/spip; \
 	rm spip.zip; \
 	chown -R www-data:www-data /usr/src/spip; \
