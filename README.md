@@ -50,10 +50,16 @@ A few defaults differ from a plain `php:apache` image.
 keep working everywhere — the root one for clean URLs and the `*.api` route, and the ones plugins
 such as Accès Restreint write inside `IMG/<extension>/`.
 
-**The tree belongs to `root`.** At startup the entrypoint sets directories to 755 and files to 644,
-and hands to `www-data` only what SPIP writes to: `tmp/`, `local/`, `IMG/`, `config/`,
+**The tree belongs to an unprivileged account.** At startup the entrypoint gives it to `spip`
+(uid/gid 1000), sets directories to 755 and files to 644, and hands to `www-data` only what SPIP
+writes to: `tmp/`, `local/`, `IMG/`, `config/`,
 `plugins/auto/`, `lib/`, plus the root `.htaccess` so URL rules stay editable. Uploads, cache, plugin
 installation through SVP and `.htaccess` edits all keep working.
+
+Files mounted into the document root get the same treatment as the rest. uid 1000 is the first
+account on most hosts, so they stay usable outside the container; use `SPIP_OWNER_UID` and
+`SPIP_OWNER_GID` if yours differ. A read-only mount refuses `chown` and `chmod` even when they would
+change nothing — this is reported and startup continues.
 
 If a plugin needs to write somewhere else, add the paths to `SPIP_WRITABLE_EXTRA`
 (`"squelettes,ecrire"`), or set `SPIP_HARDEN_PERMS=0` to skip this entirely. Note that granting
@@ -107,8 +113,10 @@ is left to the operator.
 ### Hardening
 
 - `SPIP_HARDEN_PERMS`: apply the ownership model at startup — directories 755, files 644, the tree
-  owned by `root` except `tmp/`, `local/`, `IMG/`, `config/`, `plugins/auto/`, `lib/` and the root
-  `.htaccess` — `1` or `0` (default: `1`)
+  owned by `spip` except `tmp/`, `local/`, `IMG/`, `config/`, `plugins/auto/`, `lib/` and the root
+  `.htaccess`, which stay with `www-data` — `1` or `0` (default: `1`)
+- `SPIP_OWNER_UID`, `SPIP_OWNER_GID`: owner of everything the web server must not write
+  (default: `1000`)
 - `SPIP_WRITABLE_EXTRA`: extra paths, relative to the document root, to hand to `www-data` on top of
   that set. Separate them with commas or spaces, e.g. `SPIP_WRITABLE_EXTRA="squelettes,ecrire"`.
   Paths that are absolute or contain `..` are refused, missing ones are reported and skipped

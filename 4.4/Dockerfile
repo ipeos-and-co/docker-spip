@@ -96,6 +96,13 @@ RUN set -eux; \
 	err="$(php --version 3>&1 1>&2 2>&3)"; \
 	[ -z "$err" ]
 
+# Compte non privilegie proprietaire des fichiers que le serveur web ne doit pas ecrire.
+# L'uid 1000 est celui du premier compte sur la plupart des hotes : les fichiers montes
+# depuis l'hote gardent ainsi un proprietaire exploitable en dehors du conteneur.
+RUN set -eux; \
+	groupadd -g 1000 spip; \
+	useradd -u 1000 -g 1000 -M -s /usr/sbin/nologin spip
+
 # set recommended PHP.ini settings
 # see https://secure.php.net/manual/en/opcache.installation.php
 RUN { \

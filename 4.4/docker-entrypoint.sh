@@ -6,6 +6,8 @@ set -euo pipefail
 : "${SPIP_DB_PASS:=spip}"
 : "${SPIP_ADMIN_PASS:=adminadmin}"
 : "${SPIP_HARDEN_PERMS:=1}"
+: "${SPIP_OWNER_UID:=1000}"
+: "${SPIP_OWNER_GID:=1000}"
 : "${SPIP_WRITABLE_EXTRA:=}"
 
 # Variantes *_FILE, pour les secrets Docker / Swarm / Compose.
@@ -64,22 +66,37 @@ HTEOF
 	done
 }
 
-# Arborescence a root, repertoires en 755 et fichiers en 644 ; www-data garde les seuls
-# repertoires ou SPIP ecrit. Le X majuscule de `u=rwX,go=rX` preserve le bit d'execution
-# la ou il existe deja (vendor/bin/*).
+# Arborescence au compte non privilegie spip (1000:1000), repertoires en 755 et fichiers
+# en 644 ; www-data garde les seuls repertoires ou SPIP ecrit. Le X majuscule de
+# `u=rwX,go=rX` preserve le bit d'execution la ou il existe deja (vendor/bin/*).
+#
+# Les fichiers montes depuis l'hote sont traites comme les autres. Un montage en lecture
+# seule refuse chown et chmod, meme quand ils ne changeraient rien : l'echec est signale
+# mais n'interrompt pas le demarrage.
 harden_permissions() {
-	local d p extra
-	echo >&2 "Applying ownership model (SPIP_HARDEN_PERMS=1)..."
-	chown -R root:root /var/www/html
-	chmod -R u=rwX,go=rX /var/www/html
+	local d p extra owner="${SPIP_OWNER_UID}:${SPIP_OWNER_GID}"
+	echo >&2 "Applying ownership model (SPIP_HARDEN_PERMS=1, owner ${owner})..."
+
+	if ! chown -R "$owner" /var/www/html; then
+		echo >&2 "WARNING: some paths kept their owner (read-only mount?), continuing."
+	fi
+	if ! chmod -R u=rwX,go=rX /var/www/html; then
+		echo >&2 "WARNING: some paths kept their mode (read-only mount?), continuing."
+	fi
 
 	for d in ${SPIP_WRITABLE_DIRS}; do
-		[ -d "/var/www/html/$d" ] && chown -R www-data:www-data "/var/www/html/$d"
+		if [ -d "/var/www/html/$d" ]; then
+			chown -R www-data:www-data "/var/www/html/$d" \
+				|| echo >&2 "WARNING: $d kept its owner, continuing."
+		fi
 	done
 
 	# Le .htaccess racine reste modifiable : il porte la reecriture d'URL de SPIP et les
-	# regles ajoutees par les plugins. Le repertoire racine, lui, appartient a root.
-	[ -e /var/www/html/.htaccess ] && chown www-data:www-data /var/www/html/.htaccess
+	# regles ajoutees par les plugins. Le repertoire racine, lui, appartient a spip.
+	if [ -e /var/www/html/.htaccess ]; then
+		chown www-data:www-data /var/www/html/.htaccess \
+			|| echo >&2 "WARNING: .htaccess kept its owner, continuing."
+	fi
 
 	# Repertoires supplementaires choisis par l'administrateur, relatifs a /var/www/html,
 	# separes par des virgules ou des espaces. Ex: SPIP_WRITABLE_EXTRA="squelettes,ecrire"
@@ -92,7 +109,8 @@ harden_permissions() {
 				;;
 		esac
 		if [ -e "/var/www/html/$p" ]; then
-			chown -R www-data:www-data "/var/www/html/$p"
+			chown -R www-data:www-data "/var/www/html/$p" \
+				|| echo >&2 "WARNING: $p kept its owner, continuing."
 			echo >&2 "  also writable: $p"
 		else
 			echo >&2 "WARNING: SPIP_WRITABLE_EXTRA entry '$p' does not exist, ignored."
@@ -165,11 +183,12 @@ if version_greater "$image_version" "$installed_version"; then
 	mkdir -p lib
 	mkdir -p squelettes
 	mkdir -p tmp/{dump,log,upload}
-	chown -R www-data:www-data plugins lib squelettes tmp
+	chown -R www-data:www-data plugins lib squelettes tmp \
+		|| echo >&2 "WARNING: some paths kept their owner, continuing."
 
 	if [ ! -e .htaccess ]; then
 		cp -p htaccess.txt .htaccess
-		chown www-data:www-data .htaccess
+		chown www-data:www-data .htaccess || true
 	fi
 
 	if [ "${SPIP_DB_SERVER}" = "mysql" ]; then
@@ -220,7 +239,7 @@ if (!defined("_ECRIRE_INC_VERSION")) return;
 \$GLOBALS['spip_header_silencieux'] = 1;
 ?>
 MAINEOF
-	chown www-data:www-data config/mes_options.php
+	chown www-data:www-data config/mes_options.php || true
 fi
 
 # Mettre SPIP_HARDEN_PERMS=0 pour ne pas appliquer le modele de proprietes, par exemple
