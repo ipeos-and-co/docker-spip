@@ -40,6 +40,45 @@ A complete example (with persistent volumes and a database healthcheck) is provi
 
 > **Security note:** with the default settings (`SPIP_AUTO_INSTALL=1`), the container installs a ready-to-use SPIP with the admin account `admin` / `adminadmin`. **Always set `SPIP_ADMIN_PASS`** (and `SPIP_DB_PASS`) before exposing the site, or disable auto-install with `SPIP_AUTO_INSTALL=0`.
 
+## Security defaults
+
+A few defaults differ from a plain `php:apache` image.
+
+**PHP does not run from `IMG/` and `local/`.** Apache turns the engine off in those two directories
+([`spip-hardening.conf`](spip-hardening.conf)). The rule SPIP ships in `htaccess.txt` only covers the
+`.php` extension; this covers any extension. `AllowOverride` is left untouched, so `.htaccess` files
+keep working everywhere — the root one for clean URLs and the `*.api` route, and the ones plugins
+such as Accès Restreint write inside `IMG/<extension>/`.
+
+**The tree belongs to `root`.** At startup the entrypoint sets directories to 755 and files to 644,
+and hands to `www-data` only what SPIP writes to: `tmp/`, `local/`, `IMG/`, `config/`,
+`plugins/auto/`, `lib/`, plus the root `.htaccess` so URL rules stay editable. Uploads, cache, plugin
+installation through SVP and `.htaccess` edits all keep working.
+
+If a plugin needs to write somewhere else, add the paths to `SPIP_WRITABLE_EXTRA`
+(`"squelettes,ecrire"`), or set `SPIP_HARDEN_PERMS=0` to skip this entirely. Note that granting
+`ecrire/` also allows SPIP's own code to be modified — prefer the narrowest path that works.
+
+The entrypoint also recreates the `.htaccess` protecting `tmp/`, `config/` and `vendor/` when it is
+missing, using the content SPIP itself writes. SPIP can no longer create it once the tree belongs to
+`root`, and a site coming from an older image may not have one.
+
+**Passwords are not left in the environment.** `SPIP_DB_PASS` and `SPIP_ADMIN_PASS` are used during
+installation, then removed before Apache starts, and are not declared as `ENV` in the Dockerfile.
+Both accept a `_FILE` variant (`SPIP_DB_PASS_FILE`, `SPIP_ADMIN_PASS_FILE`) for Docker secrets.
+
+**Smaller image surface.** No `netcat` (the database wait uses bash's `/dev/tcp`), no C toolchain
+once the PHP extensions are built, and no Composer dev dependencies. The ImageMagick policy is
+limited to the formats SPIP needs, which keeps the PostScript, EPS and PDF coders — and therefore
+Ghostscript — out of the picture.
+
+**Pinned sources.** The base image is referenced by digest, spip-cli is checked against the commit
+behind its tag, and the SPIP archive, `imagick` and `apcu` against their sha256. `./update.sh`
+refreshes all of them.
+
+Deployment-level hardening — dropped capabilities, a read-only root filesystem, egress filtering —
+is left to the operator.
+
 ## Available Environment Vars
 
 - `SPIP_AUTO_INSTALL`: auto install spip database `1` or `0` (default: `1`)
@@ -54,6 +93,7 @@ A complete example (with persistent volumes and a database healthcheck) is provi
 - `SPIP_DB_PORT`: MySQL server port (default: `3306`)
 - `SPIP_DB_LOGIN`: MySQL user login (default: `spip`)
 - `SPIP_DB_PASS`: MySQL user password (default: `spip`)
+- `SPIP_DB_PASS_FILE`: read the password from a file instead (Docker secrets)
 - `SPIP_DB_NAME`: MySQL database name (default: `spip`)
 
 ### Admin Account
@@ -62,6 +102,17 @@ A complete example (with persistent volumes and a database healthcheck) is provi
 - `SPIP_ADMIN_LOGIN`: account login (default: `admin`)
 - `SPIP_ADMIN_EMAIL`: account email (default: `admin@spip`)
 - `SPIP_ADMIN_PASS`: account password (default: `adminadmin`)
+- `SPIP_ADMIN_PASS_FILE`: read the password from a file instead (Docker secrets)
+
+### Hardening
+
+- `SPIP_HARDEN_PERMS`: apply the ownership model at startup — directories 755, files 644, the tree
+  owned by `root` except `tmp/`, `local/`, `IMG/`, `config/`, `plugins/auto/`, `lib/` and the root
+  `.htaccess` — `1` or `0` (default: `1`)
+- `SPIP_WRITABLE_EXTRA`: extra paths, relative to the document root, to hand to `www-data` on top of
+  that set. Separate them with commas or spaces, e.g. `SPIP_WRITABLE_EXTRA="squelettes,ecrire"`.
+  Paths that are absolute or contain `..` are refused, missing ones are reported and skipped
+  (default: empty)
 
 ### SPIP Configuration
 
@@ -79,12 +130,12 @@ Can change PHP vars to optimize your installation.
 
 ## Build & Release
 
-The `4.4/` directory is **generated**: do not edit it directly. Sources are `Dockerfile.tpl` and `docker-entrypoint.sh` at the repository root.
+The `4.4/` directory is **generated**: do not edit it directly. Sources are `Dockerfile.tpl`, `docker-entrypoint.sh` and `spip-hardening.conf` at the repository root.
 
 To release a new SPIP version:
 
 1. Bump the package version in `update.sh` (`spipPackages`).
-2. Run `./update.sh` — it regenerates `4.4/Dockerfile` (including the sha256 of the SPIP archive) and updates this README.
+2. Run `./update.sh` — it regenerates `4.4/Dockerfile` (resolving the digest of the base image, the commit behind the spip-cli tag, and the sha256 of the SPIP archive), copies the entrypoint and the hardening config, and updates this README.
 3. Run `./build.sh 4.4` — it builds and tags `ipeos/spip:4.4`, `ipeos/spip:<package>` and `ipeos/spip:latest`.
 
 ## Contributing

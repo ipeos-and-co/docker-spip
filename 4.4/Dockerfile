@@ -1,4 +1,4 @@
-FROM php:8.4-apache-trixie
+FROM php:8.4-apache-trixie@sha256:7d918f05b89117fa876badb5201bbeb176ddc72a08ac56638bb6fbf6c06d443a
 LABEL maintainer="docker@ipeos.com"
 LABEL authors="Laurent Vergerolle <docker@ipeos.com>, Michael Nival <docker@mn-home.fr>"
 LABEL org.opencontainers.image.title="SPIP"
@@ -7,11 +7,13 @@ LABEL org.opencontainers.image.source="https://github.com/ipeos-and-co/docker-sp
 LABEL org.opencontainers.image.licenses="GPL-3.0-only"
 LABEL org.opencontainers.image.version="4.4.21"
 
+# ghostscript : vignettes des PDF/EPS via imagick, restreint par la politique
+# ImageMagick posee plus bas. netcat n'est pas installe, l'attente de la base
+# utilise /dev/tcp de bash (cf. docker-entrypoint.sh).
 RUN set -eux; \
 	apt-get update; \
 	apt-get install -y --no-install-recommends \
 	ghostscript \
-	netcat-traditional \
 	; \
 	rm -rf /var/lib/apt/lists/*;
 
@@ -120,6 +122,14 @@ RUN { \
 	echo 'html_errors = Off'; \
 	} > /usr/local/etc/php/conf.d/error-logging.ini
 
+# Restreint la politique ImageMagick aux formats utiles au web. Les coders PostScript,
+# EPS et PDF passent par ghostscript, que SPIP n'a pas besoin d'atteindre.
+RUN set -eux; \
+	IM_POLICY="$(find /etc -name policy.xml -path '*ImageMagick*' | head -n 1)"; \
+	[ -n "$IM_POLICY" ]; \
+	sed -i 's!</policymap>!  <policy domain="coder" rights="none" pattern="{PS,PS2,PS3,EPS,PDF,XPS,MSL,MVG,TEXT,SHOW,WIN,PLT}" />\n  <policy domain="delegate" rights="none" pattern="gs" />\n</policymap>!' "$IM_POLICY"; \
+	grep -q 'pattern="{PS,PS2' "$IM_POLICY"
+
 RUN set -eux; \
 	a2enmod rewrite expires headers; \
 	{ \
@@ -143,6 +153,12 @@ RUN set -eux; \
 	# (replace all instances of "%h" with "%a" in LogFormat)
 	find /etc/apache2 -type f -name '*.conf' -exec sed -ri 's/([[:space:]]*LogFormat[[:space:]]+"[^"]*)%h([^"]*")/\1%a\2/g' '{}' +
 
+# Coupe le moteur PHP dans IMG/ et local/ (cf. spip-hardening.conf).
+COPY ./spip-hardening.conf /etc/apache2/conf-available/spip-hardening.conf
+RUN set -eux; \
+	a2enconf spip-hardening; \
+	apache2ctl -t
+
 ENV SPIP_VERSION=4.4
 ENV SPIP_PACKAGE=4.4.21
 
@@ -162,12 +178,14 @@ RUN set -eux; \
 	apt-get install -y --no-install-recommends $fetchDeps; \
 	\
 	git clone --depth 1 --branch 2.0.1 https://git.spip.net/spip-contrib-outils/spip-cli.git /opt/spip-cli; \
+	# un tag git est deplaçable : on verifie le commit obtenu
+	test "$(git -C /opt/spip-cli rev-parse HEAD)" = '40f2a8ac52875270f681a0ef159c8bb300e5fd4c'; \
 	rm -rf /opt/spip-cli/.git; \
 	rm -rf /opt/spip-cli/.gitattributes; \
 	rm -rf /opt/spip-cli/.gitignore; \
 	ln -s /opt/spip-cli/bin/spip /usr/local/bin/spip; \
 	ln -s /opt/spip-cli/bin/spipmu /usr/local/bin/spipmu; \
-	cd /opt/spip-cli && /opt/composer.phar install; \
+	cd /opt/spip-cli && /opt/composer.phar install --no-dev --prefer-dist --no-interaction; \
 	rm /opt/composer.phar; \
 	\
 	curl -o spip.zip -fSL "https://files.spip.net/spip/archives/spip-v${SPIP_PACKAGE}.zip"; \
@@ -180,6 +198,17 @@ RUN set -eux; \
 	rm -rf /tmp/*; \
 	rm -rf /var/lib/apt/lists/*
 
+# Retire la chaine de compilation heritee de l'image de base : elle n'a plus d'usage
+# une fois les extensions PHP construites.
+RUN set -eux; \
+	apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false \
+	gcc g++ make autoconf dpkg-dev libc6-dev re2c pkg-config \
+	|| true; \
+	rm -rf /var/lib/apt/lists/*; \
+	# les extensions doivent toujours se charger
+	err="$(php --version 3>&1 1>&2 2>&3)"; \
+	[ -z "$err" ]
+
 VOLUME /var/www/html
 
 # SPIP
@@ -188,14 +217,16 @@ ENV SPIP_DB_SERVER=mysql
 ENV SPIP_DB_HOST=mysql
 ENV SPIP_DB_PORT=3306
 ENV SPIP_DB_LOGIN=spip
-ENV SPIP_DB_PASS=spip
 ENV SPIP_DB_NAME=spip
 ENV SPIP_DB_PREFIX=spip
 ENV SPIP_ADMIN_NAME=Admin
 ENV SPIP_ADMIN_LOGIN=admin
 ENV SPIP_ADMIN_EMAIL=admin@spip
-ENV SPIP_ADMIN_PASS=adminadmin
 ENV SPIP_SITE_ADDRESS=http://localhost
+# SPIP_DB_PASS et SPIP_ADMIN_PASS ne sont pas declares ici, pour ne pas figurer dans les
+# metadonnees de l'image. Leurs valeurs de repli (`spip` / `adminadmin`) sont appliquees
+# par docker-entrypoint.sh, qui les retire de l'environnement avant de lancer Apache.
+# Variantes fichier : SPIP_DB_PASS_FILE, SPIP_ADMIN_PASS_FILE (secrets Docker).
 
 # PHP
 ENV PHP_MAX_EXECUTION_TIME=60

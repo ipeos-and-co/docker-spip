@@ -1,6 +1,36 @@
 #!/bin/bash
 set -euo pipefail
 
+# Valeurs de repli des secrets, non declarees en ENV pour ne pas figurer dans les
+# metadonnees de l'image.
+: "${SPIP_DB_PASS:=spip}"
+: "${SPIP_ADMIN_PASS:=adminadmin}"
+: "${SPIP_HARDEN_PERMS:=1}"
+: "${SPIP_WRITABLE_EXTRA:=}"
+
+# Variantes *_FILE, pour les secrets Docker / Swarm / Compose.
+read_secret_files() {
+	local var file
+	for var in SPIP_DB_PASS SPIP_ADMIN_PASS; do
+		eval "file=\${${var}_FILE:-}"
+		if [ -n "$file" ]; then
+			if [ ! -r "$file" ]; then
+				echo >&2 "ERROR: ${var}_FILE=$file is not readable, aborting."
+				exit 1
+			fi
+			eval "$var=\$(cat \"\$file\")"
+			unset "${var}_FILE"
+		fi
+	done
+}
+read_secret_files
+
+# Protege une valeur passee au shell par run_as(), pour que les mots de passe
+# contenant ; ou $( ) soient traites litteralement.
+shquote() {
+	printf "'%s'" "$(printf '%s' "$1" | sed "s/'/'\\\\''/g")"
+}
+
 run_as() {
 	if [ "$(id -u)" = 0 ]; then
 		su -p www-data -s /bin/sh -c "$1"
@@ -9,14 +39,81 @@ run_as() {
 	fi
 }
 
+# Repertoires ou SPIP ecrit, laisses a www-data. `plugins/auto` et non `plugins` :
+# c'est la seule partie ou SVP installe.
+SPIP_WRITABLE_DIRS="tmp local IMG config plugins/auto lib"
+
+# Recree le .htaccess de refus de tmp/, config/ et vendor/ s'il manque, avec le contenu
+# que SPIP y met : SPIP ne peut plus le faire lui-meme une fois l'arborescence a root.
+ensure_protection_htaccess() {
+	local d
+	for d in tmp config vendor; do
+		[ -d "/var/www/html/$d" ] || continue
+		[ -e "/var/www/html/$d/.htaccess" ] && continue
+		cat > "/var/www/html/$d/.htaccess" <<'HTEOF'
+# Deny all requests from Apache 2.4+.
+<IfModule mod_authz_core.c>
+  Require all denied
+</IfModule>
+# Deny all requests from Apache 2.0-2.2.
+<IfModule !mod_authz_core.c>
+  Deny from all
+</IfModule>
+HTEOF
+		echo >&2 "  created missing $d/.htaccess"
+	done
+}
+
+# Arborescence a root, repertoires en 755 et fichiers en 644 ; www-data garde les seuls
+# repertoires ou SPIP ecrit. Le X majuscule de `u=rwX,go=rX` preserve le bit d'execution
+# la ou il existe deja (vendor/bin/*).
+harden_permissions() {
+	local d p extra
+	echo >&2 "Applying ownership model (SPIP_HARDEN_PERMS=1)..."
+	chown -R root:root /var/www/html
+	chmod -R u=rwX,go=rX /var/www/html
+
+	for d in ${SPIP_WRITABLE_DIRS}; do
+		[ -d "/var/www/html/$d" ] && chown -R www-data:www-data "/var/www/html/$d"
+	done
+
+	# Le .htaccess racine reste modifiable : il porte la reecriture d'URL de SPIP et les
+	# regles ajoutees par les plugins. Le repertoire racine, lui, appartient a root.
+	[ -e /var/www/html/.htaccess ] && chown www-data:www-data /var/www/html/.htaccess
+
+	# Repertoires supplementaires choisis par l'administrateur, relatifs a /var/www/html,
+	# separes par des virgules ou des espaces. Ex: SPIP_WRITABLE_EXTRA="squelettes,ecrire"
+	extra=$(printf '%s' "${SPIP_WRITABLE_EXTRA}" | tr ',' ' ')
+	for p in ${extra}; do
+		case "$p" in
+			/*|*..*)
+				echo >&2 "WARNING: SPIP_WRITABLE_EXTRA entry '$p' is not a safe relative path, ignored."
+				continue
+				;;
+		esac
+		if [ -e "/var/www/html/$p" ]; then
+			chown -R www-data:www-data "/var/www/html/$p"
+			echo >&2 "  also writable: $p"
+		else
+			echo >&2 "WARNING: SPIP_WRITABLE_EXTRA entry '$p' does not exist, ignored."
+		fi
+	done
+	return 0
+}
+
 # version_greater A B returns whether A > B
 version_greater() {
     [ "$(printf '%s\n' "$@" | sort -t '.' -n -k1,1 -k2,2 -k3,3 | head -n 1)" != "$1" ]
 }
 
+# Test de port sans netcat, qui n'est plus installe dans l'image.
+db_port_open() {
+	timeout 5 bash -c "exec 3<>/dev/tcp/$1/$2" 2>/dev/null
+}
+
 wait_for_db() {
 	local tries=0
-	until nc -z -w5 "${SPIP_DB_HOST}" "${SPIP_DB_PORT:-3306}"; do
+	until db_port_open "${SPIP_DB_HOST}" "${SPIP_DB_PORT:-3306}"; do
 		tries=$((tries + 1))
 		if [ "$tries" -ge 30 ]; then
 			echo >&2 "ERROR: database ${SPIP_DB_HOST}:${SPIP_DB_PORT:-3306} still unreachable after ${tries} attempts, aborting."
@@ -100,17 +197,17 @@ if [[ ! -e config/connect.php && "${SPIP_AUTO_INSTALL}" = 1 ]]; then
 	# Wait for mysql before install
 	# cf. https://docs.docker.com/compose/startup-order/
 	if ! run_as "spip install \
-		--db-server ${SPIP_DB_SERVER} \
-		--db-host ${SPIP_DB_HOST} \
-		--db-login ${SPIP_DB_LOGIN} \
-		--db-pass ${SPIP_DB_PASS} \
-		--db-database ${SPIP_DB_NAME} \
-		--db-prefix ${SPIP_DB_PREFIX} \
-		--adresse-site ${SPIP_SITE_ADDRESS} \
-		--admin-nom ${SPIP_ADMIN_NAME} \
-		--admin-login ${SPIP_ADMIN_LOGIN} \
-		--admin-email ${SPIP_ADMIN_EMAIL} \
-		--admin-pass ${SPIP_ADMIN_PASS}"; then
+		--db-server $(shquote "${SPIP_DB_SERVER}") \
+		--db-host $(shquote "${SPIP_DB_HOST}") \
+		--db-login $(shquote "${SPIP_DB_LOGIN}") \
+		--db-pass $(shquote "${SPIP_DB_PASS}") \
+		--db-database $(shquote "${SPIP_DB_NAME}") \
+		--db-prefix $(shquote "${SPIP_DB_PREFIX}") \
+		--adresse-site $(shquote "${SPIP_SITE_ADDRESS}") \
+		--admin-nom $(shquote "${SPIP_ADMIN_NAME}") \
+		--admin-login $(shquote "${SPIP_ADMIN_LOGIN}") \
+		--admin-email $(shquote "${SPIP_ADMIN_EMAIL}") \
+		--admin-pass $(shquote "${SPIP_ADMIN_PASS}")"; then
 		echo >&2 "WARNING: SPIP auto-install failed - complete the installation via the web interface (/ecrire/)"
 	fi
 fi
@@ -125,5 +222,18 @@ if (!defined("_ECRIRE_INC_VERSION")) return;
 MAINEOF
 	chown www-data:www-data config/mes_options.php
 fi
+
+# Mettre SPIP_HARDEN_PERMS=0 pour ne pas appliquer le modele de proprietes, par exemple
+# sur un montage lie dont l'hote impose deja un proprietaire.
+if [ "$(id -u)" = 0 ]; then
+	ensure_protection_htaccess
+	if [ "${SPIP_HARDEN_PERMS}" = 1 ]; then
+		harden_permissions
+	fi
+fi
+
+# Les secrets ne servent plus apres l'installation : la configuration vit dans
+# config/connect.php. On les retire de l'environnement transmis a Apache.
+unset SPIP_DB_PASS SPIP_ADMIN_PASS SPIP_DB_LOGIN SPIP_ADMIN_LOGIN SPIP_ADMIN_EMAIL
 
 exec "$@"
