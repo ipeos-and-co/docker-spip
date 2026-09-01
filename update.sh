@@ -11,7 +11,7 @@ declare -A osVersions=(
   [4.4]='trixie'
 )
 declare -A spipPackages=(
-	[4.4]='4.4.21'
+	[4.4]='4.4.22'
 )
 declare -A spipCliVersions=(
 	[4.4]='2.0.1'
