@@ -1,11 +1,11 @@
-FROM php:8.4-apache-trixie@sha256:d54a6bdfaaa4b516264617b2ac6a3692f23f29510278e02494154f8e260e9ce3
+FROM php:8.4-apache-trixie@sha256:bd93ced3ace6835e60ee936863d32fac837f6e324d0645444493407e1f73f039
 LABEL maintainer="docker@ipeos.com"
 LABEL authors="Laurent Vergerolle <docker@ipeos.com>, Michael Nival <docker@mn-home.fr>"
 LABEL org.opencontainers.image.title="SPIP"
 LABEL org.opencontainers.image.description="SPIP 4.4 CMS on PHP 8.4 / Apache"
 LABEL org.opencontainers.image.source="https://github.com/ipeos-and-co/docker-spip"
 LABEL org.opencontainers.image.licenses="GPL-3.0-only"
-LABEL org.opencontainers.image.version="4.4.24"
+LABEL org.opencontainers.image.version="4.4.25"
 
 # ghostscript : vignettes des PDF/EPS via imagick, restreint par la politique
 # ImageMagick posee plus bas. netcat n'est pas installe, l'attente de la base
@@ -167,7 +167,7 @@ RUN set -eux; \
 	apache2ctl -t
 
 ENV SPIP_VERSION=4.4
-ENV SPIP_PACKAGE=4.4.24
+ENV SPIP_PACKAGE=4.4.25
 
 # Install SPIP-Cli
 RUN set -eux; \
@@ -196,7 +196,7 @@ RUN set -eux; \
 	rm /opt/composer.phar; \
 	\
 	curl -o spip.zip -fSL "https://files.spip.net/spip/archives/spip-v${SPIP_PACKAGE}.zip"; \
-	echo "5794c882c31cf740b36221a795923feb3c08e0629c23d8f72dbdaff69a4d982b *spip.zip" | sha256sum -c -; \
+	echo "99ba244ddf6a48d7d954dfc30db2cf4b84a2e481e47f5edd4b0c886673e0e281 *spip.zip" | sha256sum -c -; \
 	unzip -q spip.zip -d /usr/src/spip; \
 	rm spip.zip; \
 	chown -R www-data:www-data /usr/src/spip; \
