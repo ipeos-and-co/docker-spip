@@ -9,6 +9,7 @@ set -euo pipefail
 : "${SPIP_OWNER_UID:=1000}"
 : "${SPIP_OWNER_GID:=1000}"
 : "${SPIP_WRITABLE_EXTRA:=}"
+: "${SPIP_WRITABLE_ROOT_FILES:=}"
 
 # Variantes *_FILE, pour les secrets Docker / Swarm / Compose.
 read_secret_files() {
@@ -128,7 +129,58 @@ harden_permissions() {
 			echo >&2 "WARNING: SPIP_WRITABLE_EXTRA entry '$p' does not exist, ignored."
 		fi
 	done
+
+	writable_root_files
 	return 0
+}
+
+# Fichiers de la racine que SPIP doit pouvoir reecrire (llms.txt genere par un plugin...),
+# sans lui ceder le repertoire racine : celui-ci reste a spip, www-data ne peut donc y creer
+# aucun fichier, et surtout aucun .php. Chaque fichier est cree vide s'il manque puis cede a
+# www-data. ecrire_fichier() de SPIP echoue a ecrire son fichier temporaire a cote et se rabat
+# sur une ecriture directe dans le fichier existant.
+# Ex: SPIP_WRITABLE_ROOT_FILES="llms.txt,ssl-validation.txt"
+writable_root_files() {
+	local - f list target
+	set -f # pas d'expansion de * ou ? dans la liste
+	list=$(printf '%s' "${SPIP_WRITABLE_ROOT_FILES}" | tr ',' ' ')
+	for f in ${list}; do
+		case "$f" in
+			*[!A-Za-z0-9._-]*|.*|*..*)
+				echo >&2 "WARNING: SPIP_WRITABLE_ROOT_FILES entry '$f' is not a plain file name, ignored."
+				continue
+				;;
+			robots.txt|sitemap.xml)
+				# SPIP les calcule lui-meme quand ils sont absents de la racine : un fichier
+				# vide masquerait sa version.
+				echo >&2 "WARNING: SPIP_WRITABLE_ROOT_FILES entry '$f' is served by SPIP itself, ignored."
+				continue
+				;;
+			?*.txt|?*.xml|?*.json|?*.html)
+				;;
+			*)
+				echo >&2 "WARNING: SPIP_WRITABLE_ROOT_FILES entry '$f' has no allowed extension (txt, xml, json, html), ignored."
+				continue
+				;;
+		esac
+		target="/var/www/html/$f"
+		if [ -L "$target" ] || { [ -e "$target" ] && [ ! -f "$target" ]; }; then
+			echo >&2 "WARNING: SPIP_WRITABLE_ROOT_FILES entry '$f' is not a regular file, ignored."
+			continue
+		fi
+		if [ ! -e "$target" ]; then
+			if ! : > "$target"; then
+				echo >&2 "WARNING: could not create $f, continuing."
+				continue
+			fi
+			echo >&2 "  created empty $f"
+		fi
+		if chown www-data:www-data "$target" && chmod 644 "$target"; then
+			echo >&2 "  also writable: $f"
+		else
+			echo >&2 "WARNING: $f kept its owner or mode, continuing."
+		fi
+	done
 }
 
 # version_greater A B returns whether A > B
@@ -266,6 +318,8 @@ if [ "$(id -u)" = 0 ]; then
 	ensure_protection_htaccess
 	if [ "${SPIP_HARDEN_PERMS}" = 1 ]; then
 		harden_permissions
+	elif [ -n "${SPIP_WRITABLE_ROOT_FILES}" ]; then
+		echo >&2 "WARNING: SPIP_WRITABLE_ROOT_FILES is ignored when SPIP_HARDEN_PERMS=0."
 	fi
 fi
 

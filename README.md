@@ -65,6 +65,16 @@ If a plugin needs to write somewhere else, add the paths to `SPIP_WRITABLE_EXTRA
 (`"squelettes,ecrire"`), or set `SPIP_HARDEN_PERMS=0` to skip this entirely. Note that granting
 `ecrire/` also allows SPIP's own code to be modified — prefer the narrowest path that works.
 
+The document root itself stays with `spip`, so `www-data` cannot create any file there — above all
+no `.php`. When a plugin generates a file at the root, list it in
+`SPIP_WRITABLE_ROOT_FILES` instead of granting the whole root: the entrypoint creates it empty if it
+is missing and hands only that file to `www-data`. SPIP's `ecrire_fichier()` cannot write its
+temporary file next to it, and falls back to writing into the existing file directly. Files you
+place yourself (a `google….html` or SSL validation file, through `docker cp`, a mount or a `pre`
+hook) need none of this: they are readable by Apache like the rest of the tree. For
+`/.well-known/` validations, which live in a directory, use `SPIP_WRITABLE_EXTRA=".well-known"`
+only if SPIP has to write there.
+
 The entrypoint also recreates the `.htaccess` protecting `tmp/`, `config/` and `vendor/` when it is
 missing, using the content SPIP itself writes. SPIP can no longer create it once the tree belongs to
 `root`, and a site coming from an older image may not have one.
@@ -120,6 +130,14 @@ is left to the operator.
 - `SPIP_WRITABLE_EXTRA`: extra paths, relative to the document root, to hand to `www-data` on top of
   that set. Separate them with commas or spaces, e.g. `SPIP_WRITABLE_EXTRA="squelettes,ecrire"`.
   Paths that are absolute or contain `..` are refused, missing ones are reported and skipped
+  (default: empty)
+- `SPIP_WRITABLE_ROOT_FILES`: files at the document root that SPIP must be able to rewrite, created
+  empty if missing and handed to `www-data`, e.g. `SPIP_WRITABLE_ROOT_FILES="myfile.txt"`. Plain file
+  names only (`A-Z a-z 0-9 . _ -`), with a `.txt`, `.xml`, `.json` or `.html` extension; paths,
+  hidden files, symbolic links and other extensions are refused. `robots.txt` and `sitemap.xml` are
+  refused too: SPIP computes them only when they are absent from the root, so an empty file would
+  hide them. Likewise, a listed `.html` file takes precedence over a SPIP page with the same URL.
+  Until the plugin writes it, the file is served empty. Ignored when `SPIP_HARDEN_PERMS=0`
   (default: empty)
 
 ### SPIP Configuration
