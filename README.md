@@ -160,6 +160,15 @@ commands as `www-data`, and an error stops the container (the entrypoint runs wi
 `set -euo pipefail`). The ownership model applies to the files they create, as to the rest of the
 tree. Files that do not end in `.sh` are ignored.
 
+Since they share the entrypoint's shell, scripts should:
+
+- leave with `return 0`, not `exit`, unless they mean to stop the container;
+- not change the shell options (`set +e`, `set +u`…), which would weaken the rest of the startup;
+- not reuse the entrypoint's internal variables (`installed_version`, `image_version`, `hook`…).
+
+The passwords (`SPIP_DB_PASS`, `SPIP_ADMIN_PASS`) are still in the environment during `post`:
+scripts must neither write them into the volume nor print them in the logs.
+
 For instance, plugins shipped in the image (`COPY ./plugins/ /opt/site-plugins/`) are copied into
 the volume in `pre`, so that the database upgrade run when the SPIP version changes takes them into
 account, and the ownership model applies to them:
@@ -175,9 +184,22 @@ Then `post` updates their tables and applies the site configuration:
 
 ```bash
 # /docker-entrypoint.d/post/50-config.sh
+# Nothing to do until SPIP is installed
+[ -f config/connect.php ] || return 0
+# Two passes: the first one refreshes the list of active plugins, the second one
+# installs the plugins that just appeared in plugins-dist/site
+run_as "spip plugins:maj:bdd"
 run_as "spip plugins:maj:bdd"
 run_as "spip config:ecrire -f /my-config.json"
 ```
+
+- **The `config/connect.php` guard**: `post` also runs when SPIP is not installed
+  (`SPIP_AUTO_INSTALL=0`, or a failed auto-install, which only logs a warning). Without the guard,
+  `spip plugins:maj:bdd` fails (`Metas inacessibles !`) and stops the container.
+- **The two passes**: `spip plugins:maj:bdd` clears the plugin cache, then installs from the list
+  it loaded before clearing it. On a site that is already installed, a plugin added to
+  `plugins-dist/site` would be active after a single pass, but without its tables until the next
+  start.
 
 ## Build & Release
 

@@ -41,6 +41,18 @@ run_as() {
 	fi
 }
 
+# Scripts d'extension des images derivees : les fichiers *.sh de /docker-entrypoint.d/<phase>/
+# sont charges (source) par ordre alphabetique, dans ce shell. Ils peuvent donc definir des
+# variables pour la suite, utiliser run_as et shquote, et une erreur interrompt le demarrage.
+run_hooks() {
+	local hook
+	for hook in "/docker-entrypoint.d/$1"/*.sh; do
+		[ -e "$hook" ] || continue
+		echo >&2 "Running $1 hook: $hook"
+		. "$hook"
+	done
+}
+
 # Repertoires ou SPIP ecrit, laisses a www-data. `plugins/auto` et non `plugins` :
 # c'est la seule partie ou SVP installe.
 SPIP_WRITABLE_DIRS="tmp local IMG config plugins/auto lib"
@@ -169,6 +181,8 @@ echo "upload_max_filesize=${PHP_UPLOAD_MAX_FILESIZE}"; \
 echo "date.timezone=${PHP_TIMEZONE}"; \
 ) > /usr/local/etc/php/conf.d/spip.ini
 
+# Avant la copie de SPIP, l'attente de la base et l'installation
+run_hooks pre
 
 if version_greater "$image_version" "$installed_version"; then
 	echo >&2 "SPIP upgrade in $PWD - copying now..."
@@ -241,6 +255,10 @@ if (!defined("_ECRIRE_INC_VERSION")) return;
 MAINEOF
 	chown www-data:www-data config/mes_options.php || true
 fi
+
+# Apres l'installation, avec la base joignable et les secrets encore disponibles ; avant le
+# modele de proprietes, qui s'applique donc aussi aux fichiers crees par les scripts
+run_hooks post
 
 # Mettre SPIP_HARDEN_PERMS=0 pour ne pas appliquer le modele de proprietes, par exemple
 # sur un montage lie dont l'hote impose deja un proprietaire.
