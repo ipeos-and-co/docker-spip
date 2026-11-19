@@ -1,4 +1,4 @@
-FROM php:8.4-apache-trixie@sha256:f32426503c85a6a61cbd8c89d75365917b7ae021f222e036ca1a7ba466f2025c
+FROM php:8.4-apache-trixie@sha256:20da4cbf0dbb1b1951a3f88b2fb16a8272dd42c8a02901e7454bfa6151734402
 LABEL maintainer="docker@ipeos.com"
 LABEL authors="Laurent Vergerolle <docker@ipeos.com>, Michael Nival <docker@mn-home.fr>"
 LABEL org.opencontainers.image.title="SPIP"
